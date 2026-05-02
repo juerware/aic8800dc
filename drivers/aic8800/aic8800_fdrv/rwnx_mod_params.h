@@ -62,9 +62,12 @@ extern struct rwnx_mod_params rwnx_mod_params;
 
 struct rwnx_hw;
 struct wiphy;
+struct ieee80211_regdomain;
 int rwnx_handle_dynparams(struct rwnx_hw *rwnx_hw, struct wiphy *wiphy);
 void rwnx_custregd(struct rwnx_hw *rwnx_hw, struct wiphy *wiphy);
 void rwnx_enable_wapi(struct rwnx_hw *rwnx_hw);
 void rwnx_enable_mfp(struct rwnx_hw *rwnx_hw);
+struct ieee80211_regdomain *getRegdomainFromRwnxDBIndex(struct wiphy *wiphy, int index);
+struct ieee80211_regdomain *getRegdomainFromRwnxDB(struct wiphy *wiphy, char *alpha2);
 
 #endif /* _RWNX_MOD_PARAM_H_ */

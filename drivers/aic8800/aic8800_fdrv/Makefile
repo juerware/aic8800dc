@@ -1,8 +1,8 @@
 #EXTRA_CFLAGS += $(USER_EXTRA_CFLAGS)
-EXTRA_CFLAGS += -Wno-implicit-fallthrough
-EXTRA_CFLAGS += -Wno-attribute-warning
-EXTRA_CFLAGS += -Wno-discarded-qualifiers
-EXTRA_CFLAGS += -Wno-frame-larger-than
+ccflags-y += -Wno-implicit-fallthrough
+ccflags-y += -Wno-attribute-warning
+ccflags-y += -Wno-discarded-qualifiers
+ccflags-y += -Wno-frame-larger-than
 
 RWNX_VERS_NUM := 6.4.3.0
 

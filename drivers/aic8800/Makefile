@@ -73,3 +73,4 @@ clean:
 	cd aic_load_fw/;make clean;cd ..
 	cd aic8800_fdrv/;make clean;cd ..
 	rm -rf modules.order Module.symvers .tmp_versions/
+	rm -f .*.cmd .*.o

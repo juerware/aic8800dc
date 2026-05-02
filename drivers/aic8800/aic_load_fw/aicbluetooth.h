@@ -33,4 +33,10 @@ struct aicbt_patch_table *aicbt_patch_table_alloc(struct aic_usb_dev *usbdev, co
 int aicbt_patch_info_unpack(struct aicbt_patch_info_t *patch_info, struct aicbt_patch_table *head_t);
 int aicbt_patch_table_load(struct aic_usb_dev *usbdev, struct aicbt_patch_table *_head);
 
+void get_fw_path(char *fw_path);
+void set_testmode(int val);
+int get_testmode(void);
+int get_hardware_info(void);
+int get_adap_test(void);
+
 #endif

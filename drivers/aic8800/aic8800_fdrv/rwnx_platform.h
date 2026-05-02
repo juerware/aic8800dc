@@ -140,4 +140,10 @@ static inline unsigned int rwnx_platform_get_irq(struct rwnx_plat *rwnx_plat)
     return rwnx_plat->pci_dev->irq;
 }
 
+int rwnx_request_firmware_common(struct rwnx_hw *rwnx_hw, u32 **buffer, const char *filename);
+void rwnx_release_firmware_common(u32 **buffer);
+int rwnx_plat_bin_fw_upload_2(struct rwnx_hw *rwnx_hw, u32 fw_addr, char *filename);
+int rwnx_atoi(char *value);
+void rwnx_plat_userconfig_parsing(char *buffer, int size);
+
 #endif /* _RWNX_PLATFORM_H_ */

@@ -32,6 +32,10 @@ void aicwf_usb_host_init(struct usb_host_env_tag *env,
 /**
  ****************************************************************************************
  */
+/*
+ * Dead code: zero callers in the tree; body has all real work commented out.
+ * Kept (commented) per project convention rather than deleted.
+ *
 volatile struct txdesc_host *aicwf_usb_host_txdesc_get(struct usb_host_env_tag *env, const int queue_idx)
 {
  //   struct ipc_shared_env_tag *shared_env_ptr = env->shared;
@@ -55,6 +59,7 @@ volatile struct txdesc_host *aicwf_usb_host_txdesc_get(struct usb_host_env_tag *
 
     return txdesc_free;
 }
+*/
 
 /**
  ****************************************************************************************

@@ -179,5 +179,8 @@ int rwnx_send_txpwr_lvl_v3_req(struct rwnx_hw *rwnx_hw);
 int rwnx_send_reboot(struct rwnx_hw *rwnx_hw);
 #endif // CONFIG_USB_BT
 
+void rwnx_cmd_free(struct rwnx_cmd *cmd);
+int rwnx_init_cmd_array(void);
+void rwnx_free_cmd_array(void);
 
 #endif /* _RWNX_MSG_TX_H_ */

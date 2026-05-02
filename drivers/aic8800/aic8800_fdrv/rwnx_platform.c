@@ -1282,7 +1282,12 @@ static int rwnx_plat_patch_load(struct rwnx_hw *rwnx_hw)
     if(rwnx_hw->usbdev->chipid == PRODUCT_ID_AIC8800DC ||
         rwnx_hw->usbdev->chipid == PRODUCT_ID_AIC8800DW){
 #ifndef ANDROID_PLATFORM
-        sprintf(aic_fw_path, "%s/%s", aic_fw_path, "aic8800DC");
+        {
+            size_t aic_fw_path_len = strnlen(aic_fw_path, FW_PATH_MAX_LEN);
+            snprintf(aic_fw_path + aic_fw_path_len,
+                     FW_PATH_MAX_LEN - aic_fw_path_len,
+                     "/%s", "aic8800DC");
+        }
 #endif
         AICWFDBG(LOGINFO, "testmode=%d\n", testmode);
         if (chip_sub_id == 0) {
@@ -1851,7 +1856,7 @@ void get_userconfig_txpwr_loss(txpwr_loss_conf_t *txpwr_loss)
     AICWFDBG(LOGINFO, "%s:loss_value:%d\r\n",      __func__, txpwr_loss->loss_value);
 }
 
-void get_userconfig_xtal_cap(xtal_cap_conf_t *xtal_cap)
+static __maybe_unused void get_userconfig_xtal_cap(xtal_cap_conf_t *xtal_cap)
 {
     *xtal_cap = userconfig_info.xtal_cap;
 
@@ -1860,7 +1865,7 @@ void get_userconfig_xtal_cap(xtal_cap_conf_t *xtal_cap)
     AICWFDBG(LOGINFO, "%s:xtal_cap_fine:%d\r\n", __func__, xtal_cap->xtal_cap_fine);
 }
 
-void rwnx_plat_nvram_set_value(char *command, char *value)
+static void rwnx_plat_nvram_set_value(char *command, char *value)
 {
     //TODO send command
     AICWFDBG(LOGINFO, "%s:command=%s value=%s\n", __func__, command, value);

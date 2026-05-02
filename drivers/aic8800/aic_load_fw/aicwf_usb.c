@@ -1339,7 +1339,7 @@ static int aicloadfw_chipmatch(struct aic_usb_dev *usb_dev, u16 vid, u16 pid){
     }
 }
 
-int aicfw_download_fw_8800(struct aic_usb_dev *usb_dev){
+static int aicfw_download_fw_8800(struct aic_usb_dev *usb_dev){
     //uint32_t paring_id = 0;
 	uint32_t* paring_ids;
 	int paring_id_num = 0;
@@ -1563,7 +1563,7 @@ int aicfw_download_fw_8800(struct aic_usb_dev *usb_dev){
 }
 
 
-int aicfw_download_fw(struct aic_usb_dev *usb_dev)
+static int aicfw_download_fw(struct aic_usb_dev *usb_dev)
 {
     if(usb_dev->chipid == PRODUCT_ID_AIC8800){
         return aicfw_download_fw_8800(usb_dev);

@@ -139,5 +139,7 @@ struct rwnx_ipc_rxbuf_elems {
     int idx;
 };
 
+int rwnx_init_aic(struct rwnx_hw *rwnx_hw);
+
 #endif /* CONFIG_RWNX_FULLMAC */
 #endif /* _RWNX_IPC_UTILS_H_ */

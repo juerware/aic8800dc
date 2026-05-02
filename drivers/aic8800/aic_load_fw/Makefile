@@ -18,6 +18,11 @@ CONFIG_PLATFORM_UBUNTU ?= y
 
 CONFIG_AIC_LOADFW_SUPPORT = m
 MODULE_NAME = aic_load_fw
+
+ccflags-y += -Wno-implicit-fallthrough
+ccflags-y += -Wno-attribute-warning
+ccflags-y += -Wno-discarded-qualifiers
+ccflags-y += -Wno-frame-larger-than
 # CONFIG_AIC_FW_PATH = "/vendor/etc/firmware"
 # export CONFIG_AIC_FW_PATH
 

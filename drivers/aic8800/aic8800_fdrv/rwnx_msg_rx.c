@@ -20,6 +20,7 @@
 #ifdef CONFIG_RWNX_FULLMAC
 #include "rwnx_debugfs.h"
 #include "rwnx_msg_tx.h"
+#include "rwnx_msg_rx.h"
 #include "rwnx_tdls.h"
 #endif /* CONFIG_RWNX_FULLMAC */
 #include "rwnx_events.h"
@@ -1155,7 +1156,7 @@ static inline int rwnx_rx_sm_disconnect_ind(struct rwnx_hw *rwnx_hw,
     struct net_device *dev;
 #ifdef AICWF_RX_REORDER
     struct reord_ctrl_info *reord_info, *tmp;
-    u8 *macaddr;
+    const u8 *macaddr;
     struct aicwf_rx_priv *rx_priv;
 #endif
 

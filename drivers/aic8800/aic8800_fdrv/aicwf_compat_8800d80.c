@@ -1,6 +1,7 @@
 #include "rwnx_main.h"
 #include "rwnx_msg_tx.h"
 #include "reg_access.h"
+#include "aicwf_compat_8800d80.h"
 
 #define FW_USERCONFIG_NAME_8800D80         "aic_userconfig_8800d80.txt"
 
@@ -37,7 +38,12 @@ int	rwnx_plat_userconfig_load_8800d80(struct rwnx_hw *rwnx_hw){
     char *filename = FW_USERCONFIG_NAME_8800D80;
 
 #ifndef ANDROID_PLATFORM
-            sprintf(aic_fw_path, "%s/%s", aic_fw_path, "aic8800D80");
+            {
+                size_t aic_fw_path_len = strnlen(aic_fw_path, sizeof(aic_fw_path));
+                snprintf(aic_fw_path + aic_fw_path_len,
+                         sizeof(aic_fw_path) - aic_fw_path_len,
+                         "/%s", "aic8800D80");
+            }
 #endif
 
     AICWFDBG(LOGINFO, "userconfig file path:%s \r\n", filename);
