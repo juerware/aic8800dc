@@ -219,5 +219,8 @@ int usb_bustx_thread(void *data);
 int usb_busrx_thread(void *data);
 int aicwf_process_rxframes(struct aicwf_rx_priv *rx_priv);
 
+extern u8 chip_id;
+extern u8 chip_sub_id;
+
 #endif /* AICWF_USB_SUPPORT */
 #endif /* _AICWF_USB_H_       */

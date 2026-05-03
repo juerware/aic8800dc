@@ -345,13 +345,19 @@ struct radar_pulse_array_desc
     u32_l cnt;
 };
 
-/// Bit mapping inside a radar pulse element
+/*
+ * Bit mapping inside a radar pulse element.
+ * Bit-field layout is ABI-defined (not endian-defined), so we use plain
+ * u32/s32 here rather than the on-wire __le types. The underlying word is
+ * little-endian; on a big-endian host the caller must le32_to_cpu() the raw
+ * value before treating it as this struct.
+ */
 struct radar_pulse {
-    s32_l freq:6; /** Freq (resolution is 2Mhz range is [-Fadc/4 .. Fadc/4]) */
-    u32_l fom:4;  /** Figure of Merit */
-    u32_l len:6;  /** Length of the current radar pulse (resolution is 2us) */
-    u32_l rep:16; /** Time interval between the previous radar event
-                      and the current one (in us) */
+    s32 freq:6; /** Freq (resolution is 2Mhz range is [-Fadc/4 .. Fadc/4]) */
+    u32 fom:4;  /** Figure of Merit */
+    u32 len:6;  /** Length of the current radar pulse (resolution is 2us) */
+    u32 rep:16; /** Time interval between the previous radar event
+                    and the current one (in us) */
 };
 
 /// Definition of a RX vector descriptor

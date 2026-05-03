@@ -45,7 +45,7 @@ const int nx_txdesc_cnt[] =
     #endif
 };
 
-const int nx_txdesc_cnt_msk[] =
+static const int nx_txdesc_cnt_msk[] =
 {
     NX_TXDESC_CNT0 - 1,
     NX_TXDESC_CNT1 - 1,
@@ -239,10 +239,10 @@ static void ipc_host_tx_cfm_handler(struct ipc_host_env_tag *env,
         void *host_id = env->tx_host_id[queue_idx][user_pos][used_idx_mod];
 
         // Reset the host id in the array
-        env->tx_host_id[queue_idx][user_pos][used_idx_mod] = 0;
+        env->tx_host_id[queue_idx][user_pos][used_idx_mod] = NULL;
 
         // call the external function to indicate that a TX packet is freed
-        if (host_id == 0)
+        if (host_id == NULL)
         {
             // No more confirmations, so put back the used index at its initial value
             env->txdesc_used_idx[queue_idx][user_pos] = used_idx;
@@ -302,10 +302,10 @@ void *ipc_host_tx_flush(struct ipc_host_env_tag *env, const int queue_idx, const
     void *host_id = env->tx_host_id[queue_idx][user_pos][used_idx & nx_txdesc_cnt_msk[queue_idx]];
 
     // call the external function to indicate that a TX packet is freed
-    if (host_id != 0)
+    if (host_id != NULL)
     {
         // Reset the host id in the array
-        env->tx_host_id[queue_idx][user_pos][used_idx & nx_txdesc_cnt_msk[queue_idx]] = 0;
+        env->tx_host_id[queue_idx][user_pos][used_idx & nx_txdesc_cnt_msk[queue_idx]] = NULL;
 
         // Increment the used index
         env->txdesc_used_idx[queue_idx][user_pos]++;
@@ -401,7 +401,7 @@ void ipc_host_patt_addr_push(struct ipc_host_env_tag *env, uint32_t addr)
     struct ipc_shared_env_tag *shared_env_ptr = env->shared;
 
     // Copy the address
-    shared_env_ptr->pattern_addr = addr;
+    shared_env_ptr->pattern_addr = cpu_to_le32(addr);
 }
 
 /**
@@ -420,8 +420,8 @@ int ipc_host_rxbuf_push(struct ipc_host_env_tag *env,
 
 #ifdef CONFIG_RWNX_FULLMAC
     // Copy the hostbuf (DMA address) in the ipc shared memory
-    shared_env_ptr->host_rxbuf[env->ipc_host_rxbuf_idx].hostid   = hostid;
-    shared_env_ptr->host_rxbuf[env->ipc_host_rxbuf_idx].dma_addr = hostbuf;
+    shared_env_ptr->host_rxbuf[env->ipc_host_rxbuf_idx].hostid   = cpu_to_le32(hostid);
+    shared_env_ptr->host_rxbuf[env->ipc_host_rxbuf_idx].dma_addr = cpu_to_le32(hostbuf);
 #else
     // Save the hostid and the hostbuf in global array
     env->ipc_host_rxbuf_array[env->ipc_host_rxbuf_idx].hostid = hostid;
@@ -452,7 +452,7 @@ int ipc_host_rxdesc_push(struct ipc_host_env_tag *env, void *hostid,
     env->ipc_host_rxdesc_array[env->ipc_host_rxdesc_idx].dma_addr = hostbuf;
     env->ipc_host_rxdesc_array[env->ipc_host_rxdesc_idx].hostid = hostid;
 
-    shared_env_ptr->host_rxdesc[env->ipc_host_rxdesc_idx].dma_addr = hostbuf;
+    shared_env_ptr->host_rxdesc[env->ipc_host_rxdesc_idx].dma_addr = cpu_to_le32(hostbuf);
 
     // Signal to the embedded CPU that at least one descriptor is available
     ipc_app2emb_trigger_set(shared_env_ptr, IPC_IRQ_A2E_RXDESC_BACK);
@@ -476,7 +476,7 @@ int ipc_host_radarbuf_push(struct ipc_host_env_tag *env, void *hostid,
     env->ipc_host_radarbuf_array[env->ipc_host_radarbuf_idx].dma_addr = hostbuf;
 
     // Copy the hostbuf (DMA address) in the ipc shared memory
-    shared_env_ptr->radarbuf_hostbuf[env->ipc_host_radarbuf_idx] = hostbuf;
+    shared_env_ptr->radarbuf_hostbuf[env->ipc_host_radarbuf_idx] = cpu_to_le32(hostbuf);
 
     // Increment the array index
     env->ipc_host_radarbuf_idx = (env->ipc_host_radarbuf_idx +1)%IPC_RADARBUF_CNT;
@@ -498,7 +498,7 @@ int ipc_host_unsup_rx_vec_buf_push(struct ipc_host_env_tag *env,
     env->ipc_host_unsuprxvecbuf_array[env->ipc_host_unsuprxvecbuf_idx].dma_addr = hostbuf;
 
     // Copy the hostbuf (DMA address) in the ipc shared memory
-    shared_env_ptr->unsuprxvecbuf_hostbuf[env->ipc_host_unsuprxvecbuf_idx] = hostbuf;
+    shared_env_ptr->unsuprxvecbuf_hostbuf[env->ipc_host_unsuprxvecbuf_idx] = cpu_to_le32(hostbuf);
 
     // Increment the array index
     env->ipc_host_unsuprxvecbuf_idx = (env->ipc_host_unsuprxvecbuf_idx + 1)%IPC_UNSUPRXVECBUF_CNT;
@@ -519,7 +519,7 @@ int ipc_host_msgbuf_push(struct ipc_host_env_tag *env, void *hostid,
     env->ipc_host_msgbuf_array[env->ipc_host_msge2a_idx].dma_addr = hostbuf;
 
     // Copy the hostbuf (DMA address) in the ipc shared memory
-    shared_env_ptr->msg_e2a_hostbuf_addr[env->ipc_host_msge2a_idx] = hostbuf;
+    shared_env_ptr->msg_e2a_hostbuf_addr[env->ipc_host_msge2a_idx] = cpu_to_le32(hostbuf);
 
     // Increment the array index
     env->ipc_host_msge2a_idx = (env->ipc_host_msge2a_idx +1)%IPC_MSGE2A_BUF_CNT;
@@ -540,7 +540,7 @@ int ipc_host_dbgbuf_push(struct ipc_host_env_tag *env, void *hostid,
     env->ipc_host_dbgbuf_array[env->ipc_host_dbg_idx].dma_addr = hostbuf;
 
     // Copy the hostbuf (DMA address) in the ipc shared memory
-    shared_env_ptr->dbg_hostbuf_addr[env->ipc_host_dbg_idx] = hostbuf;
+    shared_env_ptr->dbg_hostbuf_addr[env->ipc_host_dbg_idx] = cpu_to_le32(hostbuf);
 
     // Increment the array index
     env->ipc_host_dbg_idx = (env->ipc_host_dbg_idx +1)%IPC_DBGBUF_CNT;
@@ -556,7 +556,7 @@ void ipc_host_dbginfobuf_push(struct ipc_host_env_tag *env, uint32_t infobuf)
     struct ipc_shared_env_tag *shared_env_ptr = env->shared;
 
     // Copy the hostbuf (DMA address) in the ipc shared memory
-    shared_env_ptr->la_dbginfo_addr = infobuf;
+    shared_env_ptr->la_dbginfo_addr = cpu_to_le32(infobuf);
 }
 
 /**
@@ -596,7 +596,7 @@ void ipc_host_txdesc_push(struct ipc_host_env_tag *env, const int queue_idx,
 
 
     // Descriptor is now ready
-    txdesc_pushed->ready = 0xFFFFFFFF;
+    txdesc_pushed->ready = cpu_to_le32(0xFFFFFFFF);
 
     // Save the host id in the environment
     env->tx_host_id[queue_idx][user_pos][free_idx] = host_id;

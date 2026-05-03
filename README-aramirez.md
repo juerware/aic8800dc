@@ -5,7 +5,7 @@
 Install kernel headers and a C toolchain:
 
 ```bash
-sudo apt install linux-headers-$(uname -r) build-essential dwarves
+sudo apt install linux-headers-$(uname -r) build-essential dwarves sparse cppcheck
 ```
 
 ## Build

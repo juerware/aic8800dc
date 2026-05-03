@@ -16,8 +16,8 @@ void rwnx_plat_userconfig_parsing(char *buffer, int size);
 void rwnx_release_firmware_common(u32** buffer);
 
 extern int testmode;
-extern int chip_id;
-u8 chip_mcu_id = 0;
+extern u8 chip_id;
+static u8 chip_mcu_id = 0;
 
 typedef u32 (*array2_tbl_t)[2];
 
@@ -39,7 +39,7 @@ typedef struct {
 #define AIC_PATCH_OFST(mem) ((size_t) &((aic_patch_t *)0)->mem)
 #define AIC_PATCH_ADDR(mem) ((u32) (aic_patch_str_base + AIC_PATCH_OFST(mem)))
 
-u32 patch_tbl_d80[][2] =
+static const u32 patch_tbl_d80[][2] =
 {
     #ifdef USE_5G
     {0x00b4, 0xf3010001},
@@ -50,16 +50,16 @@ u32 patch_tbl_d80[][2] =
 };
 
 //adap test
-u32 adaptivity_patch_tbl_d80[][2] = {
+static const u32 adaptivity_patch_tbl_d80[][2] = {
     {0x000C, 0x0000320A}, //linkloss_thd
     {0x009C, 0x00000000}, //ac_param_conf
     {0x0168, 0x00010000}, //tx_adaptivity_en
 };
 
-u32 syscfg_tbl_masked_8800d80[][3] = {
+static const u32 syscfg_tbl_masked_8800d80[][3] = {
 };
 
-u32 syscfg_tbl_8800d80[][2] = {
+static const u32 syscfg_tbl_8800d80[][2] = {
     #ifdef CONFIG_PMIC_SETTING
     {0x70001408, 0x00000000}, // stop wdg
     #endif /* CONFIG_PMIC_SETTING */
@@ -287,9 +287,6 @@ int aicfw_download_fw_8800d80(struct aic_usb_dev *usb_dev)
         return -1;
     }
 
-    if(head == NULL){
-        return -1;
-    }
     if (chip_id == CHIP_REV_U01) {
         patch_info.addr_adid = FW_RAM_ADID_BASE_ADDR_8800D80;
         patch_info.addr_patch = FW_RAM_PATCH_BASE_ADDR_8800D80;

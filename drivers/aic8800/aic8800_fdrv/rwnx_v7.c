@@ -16,8 +16,8 @@
 
 struct rwnx_v7
 {
-    u8 *pci_bar0_vaddr;
-    u8 *pci_bar1_vaddr;
+    u8 __iomem *pci_bar0_vaddr;
+    u8 __iomem *pci_bar1_vaddr;
 };
 
 static int rwnx_v7_platform_enable(struct rwnx_hw *rwnx_hw)
@@ -51,8 +51,8 @@ static void rwnx_v7_platform_deinit(struct rwnx_plat *rwnx_plat)
     kfree(rwnx_plat);
 }
 
-static u8* rwnx_v7_get_address(struct rwnx_plat *rwnx_plat, int addr_name,
-                               unsigned int offset)
+static u8 __iomem *rwnx_v7_get_address(struct rwnx_plat *rwnx_plat, int addr_name,
+                                       unsigned int offset)
 {
     struct rwnx_v7 *rwnx_v7 = (struct rwnx_v7 *)rwnx_plat->priv;
 
@@ -153,12 +153,12 @@ int rwnx_v7_platform_init(struct pci_dev *pci_dev, struct rwnx_plat **rwnx_plat)
     }
     #endif
 
-    if (!(rwnx_v7->pci_bar0_vaddr = (u8 *)pci_ioremap_bar(pci_dev, 0))) {
+    if (!(rwnx_v7->pci_bar0_vaddr = (u8 __iomem *)pci_ioremap_bar(pci_dev, 0))) {
         dev_err(&(pci_dev->dev), "pci_ioremap_bar(%d) failed\n", 0);
         ret = -ENOMEM;
         goto out_bar0;
     }
-    if (!(rwnx_v7->pci_bar1_vaddr = (u8 *)pci_ioremap_bar(pci_dev, 1))) {
+    if (!(rwnx_v7->pci_bar1_vaddr = (u8 __iomem *)pci_ioremap_bar(pci_dev, 1))) {
         dev_err(&(pci_dev->dev), "pci_ioremap_bar(%d) failed\n", 1);
         ret = -ENOMEM;
         goto out_bar1;

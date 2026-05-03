@@ -1,7 +1,7 @@
 #include <linux/memory.h>
 #include "md5.h"
  
-unsigned char PADDING[]={0x80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+static unsigned char PADDING[]={0x80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                          0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                          0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
                          0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -50,7 +50,7 @@ void MD5Final(MD5_CTX *context,unsigned char digest[16])
     MD5Update(context,bits,8);
     MD5Encode(digest,context->state,16);
 }
-void MD5Encode(unsigned char *output,unsigned int *input,unsigned int len)
+void MD5Encode(unsigned char *output, const unsigned int *input, unsigned int len)
 {
     unsigned int i = 0,j = 0;
     while(j < len)
@@ -63,7 +63,7 @@ void MD5Encode(unsigned char *output,unsigned int *input,unsigned int len)
          j+=4;
     }
 }
-void MD5Decode(unsigned int *output,unsigned char *input,unsigned int len)
+void MD5Decode(unsigned int *output, const unsigned char *input, unsigned int len)
 {
      unsigned int i = 0,j = 0;
      while(j < len)

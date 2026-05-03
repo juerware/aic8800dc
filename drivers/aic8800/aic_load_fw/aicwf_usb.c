@@ -37,7 +37,7 @@ extern uint32_t gpio_num;//default select gpiob2 for fw_wakeup_host
 extern uint32_t gpio_dft_lvl;//0:defalut pull down,  1:default pull up
 u8 chip_id = 0;
 u8 chip_sub_id = 0;
-int fw_loaded = 0;
+static int fw_loaded = 0;
 
 void aicwf_usb_tx_flowctrl(struct aic_usb_dev *usb_dev, bool state)
 {
@@ -467,14 +467,13 @@ static void aicwf_usb_free_urb(struct list_head *q, spinlock_t *qlock)
 
     spin_lock_irqsave(qlock, flags);
     list_for_each_entry_safe(usb_buf, tmp, q, list) {
-    spin_unlock_irqrestore(qlock, flags);
         if (!usb_buf->urb) {
             usb_err("bad usb_buf\n");
-            spin_lock_irqsave(qlock, flags);
             break;
         }
-        usb_free_urb(usb_buf->urb);
         list_del_init(&usb_buf->list);
+        spin_unlock_irqrestore(qlock, flags);
+        usb_free_urb(usb_buf->urb);
         spin_lock_irqsave(qlock, flags);
     }
     spin_unlock_irqrestore(qlock, flags);
@@ -924,13 +923,13 @@ u32 patch_tbl[18][2] =
 };
 #endif
 
-u32 adaptivity_patch_tbl[][2] = {
+static const u32 adaptivity_patch_tbl[][2] = {
 	{0x0004, 0x0000320A}, //linkloss_thd
     {0x0094, 0x00000000}, //ac_param_conf
 	{0x00F8, 0x00010138}, //tx_adaptivity_en
 };
 
-u32 patch_tbl[][2] ={
+static const u32 patch_tbl[][2] ={
 {0x0044, 0x00000002}, //hosttype
 {0x0048, 0x00000060},
 #if 1//def CONFIG_USB_BT
@@ -1001,14 +1000,14 @@ u32 patch_tbl[][2] =
 };
 #endif
 
-u32 syscfg_tbl_pmic_u02[][2] = {
+static const u32 syscfg_tbl_pmic_u02[][2] = {
     {0x40040000, 0x00001AC8}, // 1) fix panic
     {0x40040084, 0x00011580},
     {0x40040080, 0x00000001},
     {0x40100058, 0x00000000},
 };
 
-u32 syscfg_tbl_u04[][2] = {
+static const u32 syscfg_tbl_u04[][2] = {
     {0x40040000, 0x0000042C}, // protect usb replenish rxq / flush rxq, skip flush rxq before start_app
     {0x40040004, 0x0000DD44},
     {0x40040008, 0x00000448},
@@ -1032,7 +1031,7 @@ u32 syscfg_tbl_u04[][2] = {
     {0x40100058, 0x00000000},
 };
 
-u32 syscfg_tbl[][2] = {
+static const u32 syscfg_tbl[][2] = {
     {0x40500014, 0x00000101}, // 1)
     {0x40500018, 0x0000010d}, // 2)//bt only:10d ,bt combo and bt only sw:109
     {0x40500004, 0x00000010}, // 3) the order should not be changed
@@ -1043,7 +1042,7 @@ u32 syscfg_tbl[][2] = {
     #endif /* CONFIG_PMIC_SETTING */
 };
 
-u32 sys_reboot_tbl[][2] = {
+static const u32 sys_reboot_tbl[][2] = {
     {0x50017000, 0x0001ffff},
     {0x50017008, 0x00000002},
 };
@@ -1067,7 +1066,7 @@ u32 bt_config_tbl[][2] =
 };
 #endif
 
-u32 rf_tbl_masked[][3] = {
+static const u32 rf_tbl_masked[][3] = {
 	{0x40344058, 0x00800000, 0x00000000},// pll trx
 };
 

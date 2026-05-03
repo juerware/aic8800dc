@@ -42,8 +42,8 @@
 
 struct rwnx_dini
 {
-    u8 *pci_bar0_vaddr;
-    u8 *pci_bar4_vaddr;
+    u8 __iomem *pci_bar0_vaddr;
+    u8 __iomem *pci_bar4_vaddr;
 };
 
 static const u32 mv_cfg_fpga_dma_ctrl_regs[] = {
@@ -57,7 +57,7 @@ static void dini_dma_on(struct rwnx_dini *rwnx_dini)
 {
     int i;
     u32 reread_time;
-    volatile void *reg;
+    volatile void __iomem *reg;
 
     for (i = 0; i < ARRAY_SIZE(mv_cfg_fpga_dma_ctrl_regs); i++) {
         reg = rwnx_dini->pci_bar0_vaddr + mv_cfg_fpga_dma_ctrl_regs[i];
@@ -73,7 +73,7 @@ static void dini_dma_off(struct rwnx_dini *rwnx_dini)
 {
     int i;
     u32 reread_time;
-    volatile void *reg;
+    volatile void __iomem *reg;
 
     for (i = 0; i < ARRAY_SIZE(mv_cfg_fpga_dma_ctrl_regs); i++) {
         reg = rwnx_dini->pci_bar0_vaddr + mv_cfg_fpga_dma_ctrl_regs[i];
@@ -107,7 +107,7 @@ static int rwnx_cfpga_irq_enable(struct rwnx_hw *rwnx_hw)
     struct rwnx_plat *rwnx_plat = rwnx_hw->plat;
     struct rwnx_dini *rwnx_dini = (struct rwnx_dini *)rwnx_plat->priv;
     unsigned int cfpga_uintr_mask;
-    volatile void *reg;
+    volatile void __iomem *reg;
     int ret;
 
     /* sched_setscheduler on ONESHOT threaded irq handler for BCNs ? */
@@ -131,7 +131,7 @@ static int rwnx_cfpga_irq_disable(struct rwnx_hw *rwnx_hw)
     struct rwnx_plat *rwnx_plat = rwnx_hw->plat;
     struct rwnx_dini *rwnx_dini = (struct rwnx_dini *)rwnx_plat->priv;
     unsigned int cfpga_uintr_mask;
-    volatile void *reg;
+    volatile void __iomem *reg;
 
     reg = rwnx_dini->pci_bar0_vaddr + CFPGA_UINTR_MASK_REG;
     cfpga_uintr_mask = readl(reg);
@@ -178,8 +178,8 @@ static void rwnx_dini_platform_deinit(struct rwnx_plat *rwnx_plat)
     kfree(rwnx_plat);
 }
 
-static u8* rwnx_dini_get_address(struct rwnx_plat *rwnx_plat, int addr_name,
-                                 unsigned int offset)
+static u8 __iomem *rwnx_dini_get_address(struct rwnx_plat *rwnx_plat, int addr_name,
+                                         unsigned int offset)
 {
     struct rwnx_dini *rwnx_dini = (struct rwnx_dini *)rwnx_plat->priv;
 
@@ -258,12 +258,12 @@ int rwnx_dini_platform_init(struct pci_dev *pci_dev, struct rwnx_plat **rwnx_pla
         goto out_request;
     }
 
-    if (!(rwnx_dini->pci_bar0_vaddr = (u8 *)pci_ioremap_bar(pci_dev, 0))) {
+    if (!(rwnx_dini->pci_bar0_vaddr = (u8 __iomem *)pci_ioremap_bar(pci_dev, 0))) {
         dev_err(&(pci_dev->dev), "pci_ioremap_bar(%d) failed\n", 0);
         ret = -ENOMEM;
         goto out_bar0;
     }
-    if (!(rwnx_dini->pci_bar4_vaddr = (u8 *)pci_ioremap_bar(pci_dev, 4))) {
+    if (!(rwnx_dini->pci_bar4_vaddr = (u8 __iomem *)pci_ioremap_bar(pci_dev, 4))) {
         dev_err(&(pci_dev->dev), "pci_ioremap_bar(%d) failed\n", 4);
         ret = -ENOMEM;
         goto out_bar4;

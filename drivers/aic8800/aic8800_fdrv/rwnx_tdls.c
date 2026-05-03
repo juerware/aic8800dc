@@ -309,7 +309,7 @@ rwnx_add_wmm_param_ie(struct sk_buff *skb, u8 acm_bits, u32 *ac_params)
 
         wmm->ac[i].aci_aifsn = (i << 5) | (acm << 4) | (ac_params[j] & 0xF);
         wmm->ac[i].cw = (cw_max << 4) | cw_min;
-        wmm->ac[i].txop_limit = (ac_params[j] & 0x0FFFF000 ) >> 12;
+        wmm->ac[i].txop_limit = cpu_to_le16((ac_params[j] & 0x0FFFF000) >> 12);
     }
 }
 

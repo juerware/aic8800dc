@@ -98,8 +98,8 @@ struct rwnx_plat {
     int (*enable)(struct rwnx_hw *rwnx_hw);
     int (*disable)(struct rwnx_hw *rwnx_hw);
     void (*deinit)(struct rwnx_plat *rwnx_plat);
-    u8* (*get_address)(struct rwnx_plat *rwnx_plat, int addr_name,
-                       unsigned int offset);
+    u8 __iomem *(*get_address)(struct rwnx_plat *rwnx_plat, int addr_name,
+                               unsigned int offset);
     void (*ack_irq)(struct rwnx_plat *rwnx_plat);
     int (*get_config_reg)(struct rwnx_plat *rwnx_plat, const u32 **list);
 

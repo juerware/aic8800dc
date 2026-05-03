@@ -2694,8 +2694,8 @@ static int handle_private_cmd(struct net_device *net, char *command, u32 cmd_len
 #define CMD_SET_TESTMODE        "SET_TESTMODE"
 
 
-struct ieee80211_regdomain *getRegdomainFromRwnxDB(struct wiphy *wiphy, char *alpha2);
-struct ieee80211_regdomain *getRegdomainFromRwnxDBIndex(struct wiphy *wiphy, int index);
+const struct ieee80211_regdomain *getRegdomainFromRwnxDB(struct wiphy *wiphy, char *alpha2);
+const struct ieee80211_regdomain *getRegdomainFromRwnxDBIndex(struct wiphy *wiphy, int index);
 extern int reg_regdb_size;
 
 #ifdef CONFIG_SET_VENDOR_EXTENSION_IE
@@ -5153,7 +5153,7 @@ cfg80211_chandef_identical(const struct cfg80211_chan_def *chandef1,
 static int rwnx_cfg80211_set_monitor_channel(
     struct wiphy *wiphy,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 13, 0)
-    struct net_device *,
+    struct net_device *dev __maybe_unused,
 #endif
     struct cfg80211_chan_def *chandef
 )

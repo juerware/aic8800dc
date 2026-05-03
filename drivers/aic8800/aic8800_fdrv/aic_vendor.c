@@ -673,7 +673,7 @@ static int aicwf_dump_interface(struct wiphy *wiphy,
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0)
 
-const struct wiphy_vendor_command aicwf_vendor_cmd[] = {
+static const struct wiphy_vendor_command aicwf_vendor_cmd[] = {
 	{
 		{
 			.vendor_id = GOOGLE_OUI,

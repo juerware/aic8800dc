@@ -403,21 +403,24 @@ static int cmd_mgr_msgind(struct rwnx_cmd_mgr *cmd_mgr, struct rwnx_cmd_e2amsg *
     AICWFDBG(LOGTRACE, "%s cmd->id=%d\n", __func__, msg->id);
     spin_lock_bh(&cmd_mgr->lock);
     list_for_each_entry_safe(cmd, pos, &cmd_mgr->cmds, list) {
-        if (cmd->reqid == msg->id &&
+        if (cmd->reqid == le16_to_cpu(msg->id) &&
             (cmd->flags & RWNX_CMD_FLAG_WAIT_CFM)) {
 
             if (!cmd_mgr_run_callback(rwnx_hw, cmd, msg, cb)) {
+                u16 param_len = le16_to_cpu(msg->param_len);
+
                 found = true;
                 cmd->flags &= ~RWNX_CMD_FLAG_WAIT_CFM;
 
-                if (WARN((msg->param_len > RWNX_CMD_E2AMSG_LEN_MAX),
-                         "Unexpect E2A msg len %d > %d\n", msg->param_len,
+                if (WARN((param_len > RWNX_CMD_E2AMSG_LEN_MAX),
+                         "Unexpect E2A msg len %d > %d\n", param_len,
                          RWNX_CMD_E2AMSG_LEN_MAX)) {
-                    msg->param_len = RWNX_CMD_E2AMSG_LEN_MAX;
+                    msg->param_len = cpu_to_le16(RWNX_CMD_E2AMSG_LEN_MAX);
+                    param_len = RWNX_CMD_E2AMSG_LEN_MAX;
                 }
 
-                if (cmd->e2a_msg && msg->param_len)
-                    memcpy(cmd->e2a_msg, &msg->param, msg->param_len);
+                if (cmd->e2a_msg && param_len)
+                    memcpy(cmd->e2a_msg, &msg->param, param_len);
 
                 if (RWNX_CMD_WAIT_COMPLETE(cmd->flags))
                     cmd_complete(cmd_mgr, cmd);

@@ -157,18 +157,16 @@ void aicwf_tx_deinit(struct aicwf_tx_priv* tx_priv)
         dev_kfree_skb(tx_priv->aggr_buf);
 
     kfree(tx_priv);
-    tx_priv = NULL;
+    /* tx_priv = NULL;  -- dead store: only nulls the local copy of the pointer */
 }
 
 static bool aicwf_another_ptk(struct sk_buff *skb)
 {
-    u8 *data;
-    u16 aggr_len = 0;
+    u16 aggr_len;
 
     if(skb->data == NULL || skb->len == 0) {
         return false;
     }
-    data = skb->data;
     aggr_len = (*skb->data | (*(skb->data + 1) << 8));
     if(aggr_len == 0) {
         return false;
@@ -325,7 +323,7 @@ void aicwf_rx_deinit(struct aicwf_rx_priv* rx_priv)
     }
 
     kfree(rx_priv);
-    rx_priv = NULL;
+    /* rx_priv = NULL;  -- dead store: only nulls the local copy of the pointer */
 }
 
 bool aicwf_rxframe_enqueue(struct device *dev, struct frame_queue *q, struct sk_buff *pkt)

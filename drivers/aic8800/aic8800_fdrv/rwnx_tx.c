@@ -474,11 +474,11 @@ static inline void rwnx_set_more_data_flag(struct rwnx_hw *rwnx_hw,
 #endif
         if (((txq->ps_id == UAPSD_ID) || (vif->wdev.iftype == NL80211_IFTYPE_MESH_POINT) || (sta->tdls.active))
                 && !sta->ps.sp_cnt[txq->ps_id]) {
-            sw_txhdr->desc.host.flags |= TXU_CNTRL_EOSP;
+            sw_txhdr->desc.host.flags |= cpu_to_le16(TXU_CNTRL_EOSP);
         }
 
         if (sta->ps.pkt_ready[txq->ps_id]) {
-            sw_txhdr->desc.host.flags |= TXU_CNTRL_MORE_DATA;
+            sw_txhdr->desc.host.flags |= cpu_to_le16(TXU_CNTRL_MORE_DATA);
         } else {
             rwnx_set_traffic_status(rwnx_hw, sta, false, txq->ps_id);
         }
@@ -655,10 +655,10 @@ void rwnx_tx_push(struct rwnx_hw *rwnx_hw, struct rwnx_txhdr *txhdr, int flags)
     } else {
         sw_txhdr->need_cfm = 0;
         if (sw_txhdr->raw_frame) {
-            sw_txhdr->desc.host.flags |= TXU_CNTRL_MGMT;
+            sw_txhdr->desc.host.flags |= cpu_to_le16(TXU_CNTRL_MGMT);
         }
         if (sw_txhdr->fixed_rate) {
-            sw_txhdr->desc.host.status_desc_addr = (0x01UL << 30) | sw_txhdr->rate_config;
+            sw_txhdr->desc.host.status_desc_addr = cpu_to_le32((0x01UL << 30) | sw_txhdr->rate_config);
         } else {
             sw_txhdr->desc.host.status_desc_addr = 0;
         }
@@ -670,12 +670,12 @@ void rwnx_tx_push(struct rwnx_hw *rwnx_hw, struct rwnx_txhdr *txhdr, int flags)
     aicwf_frame_tx((void *)(rwnx_hw->sdiodev), skb);
 #endif
 #ifdef AICWF_USB_SUPPORT
-    if( ((sw_txhdr->desc.host.flags & TXU_CNTRL_MGMT) && \
+    if( ((sw_txhdr->desc.host.flags & cpu_to_le16(TXU_CNTRL_MGMT)) && \
 	((*(skb->data+sw_txhdr->headroom)==0xd0) || (*(skb->data+sw_txhdr->headroom)==0x10) || (*(skb->data+sw_txhdr->headroom)==0x30))) || \
-        (sw_txhdr->desc.host.ethertype == 0x8e88) || (sw_txhdr->desc.host.ethertype == 0xb488)) {
+        (sw_txhdr->desc.host.ethertype == cpu_to_le16(0x8e88)) || (sw_txhdr->desc.host.ethertype == cpu_to_le16(0xb488))) {
 	// 0xd0:Action, 0x10:AssocRsp, 0x8e88:EAPOL, 0xb488: WAPI
         sw_txhdr->need_cfm = 1;
-        sw_txhdr->desc.host.status_desc_addr = ((1<<31) | rwnx_hw->usb_env.txdesc_free_idx[0]);
+        sw_txhdr->desc.host.status_desc_addr = cpu_to_le32((1U<<31) | rwnx_hw->usb_env.txdesc_free_idx[0]);
         aicwf_usb_host_txdesc_push(&(rwnx_hw->usb_env), 0, (long)(skb));
         AICWFDBG(LOGINFO, "need cfm ethertype:%8x,user_idx=%d, skb=%p sta_idx:%d\n", 
 			sw_txhdr->desc.host.ethertype, 
@@ -685,10 +685,10 @@ void rwnx_tx_push(struct rwnx_hw *rwnx_hw, struct rwnx_txhdr *txhdr, int flags)
     } else {
         sw_txhdr->need_cfm = 0;
         if (sw_txhdr->raw_frame) {
-            sw_txhdr->desc.host.flags |= TXU_CNTRL_MGMT;
+            sw_txhdr->desc.host.flags |= cpu_to_le16(TXU_CNTRL_MGMT);
         }
         if (sw_txhdr->fixed_rate) {
-            sw_txhdr->desc.host.status_desc_addr = (0x01UL << 30) | sw_txhdr->rate_config;
+            sw_txhdr->desc.host.status_desc_addr = cpu_to_le32((0x01UL << 30) | sw_txhdr->rate_config);
         } else {
             sw_txhdr->desc.host.status_desc_addr = 0;
         }
@@ -739,7 +739,7 @@ static void rwnx_tx_retry(struct rwnx_hw *rwnx_hw, struct sk_buff *skb,
         sw_txhdr->desc.host.pn[3] = cfm->pn[3];
         sw_txhdr->desc.host.timestamp = cfm->timestamp;
 		#endif
-		sw_txhdr->desc.host.flags |= TXU_CNTRL_RETRY;
+		sw_txhdr->desc.host.flags |= cpu_to_le16(TXU_CNTRL_RETRY);
 
         #ifdef CONFIG_RWNX_AMSDUS_TX
         if (sw_txhdr->desc.host.flags & TXU_CNTRL_AMSDU)
@@ -748,7 +748,7 @@ static void rwnx_tx_retry(struct rwnx_hw *rwnx_hw, struct sk_buff *skb,
     }
 
     /* MORE_DATA will be re-set if needed when pkt will be repushed */
-    sw_txhdr->desc.host.flags &= ~TXU_CNTRL_MORE_DATA;
+    sw_txhdr->desc.host.flags &= ~cpu_to_le16(TXU_CNTRL_MORE_DATA);
 
     cfm->status.value = 0;
     dma_sync_single_for_device(rwnx_hw->dev, sw_txhdr->dma_addr + peek_off,
@@ -1537,7 +1537,7 @@ netdev_tx_t rwnx_start_xmit(struct sk_buff *skb, struct net_device *dev)
     // Fill-in the descriptor
     memcpy(&desc->host.eth_dest_addr, eth_t.h_dest, ETH_ALEN);
     memcpy(&desc->host.eth_src_addr, eth_t.h_source, ETH_ALEN);
-    desc->host.ethertype = eth_t.h_proto;
+    desc->host.ethertype = (__force __le16)eth_t.h_proto;
     desc->host.staid = sta->sta_idx;
     desc->host.tid = tid;
     if (unlikely(rwnx_vif->wdev.iftype == NL80211_IFTYPE_AP_VLAN))
@@ -1546,28 +1546,28 @@ netdev_tx_t rwnx_start_xmit(struct sk_buff *skb, struct net_device *dev)
         desc->host.vif_idx = rwnx_vif->vif_index;
 
     if (rwnx_vif->use_4addr && (sta->sta_idx < NX_REMOTE_STA_MAX))
-        desc->host.flags = TXU_CNTRL_USE_4ADDR;
+        desc->host.flags = cpu_to_le16(TXU_CNTRL_USE_4ADDR);
     else
         desc->host.flags = 0;
 
     if ((rwnx_vif->tdls_status == TDLS_LINK_ACTIVE) &&
         rwnx_vif->sta.tdls_sta &&
         (memcmp(desc->host.eth_dest_addr.array, rwnx_vif->sta.tdls_sta->mac_addr, ETH_ALEN) == 0)) {
-        desc->host.flags |= TXU_CNTRL_TDLS;
+        desc->host.flags |= cpu_to_le16(TXU_CNTRL_TDLS);
         rwnx_vif->sta.tdls_sta->tdls.last_tid = desc->host.tid;
         //rwnx_vif->sta.tdls_sta->tdls.last_sn = desc->host.sn;
     }
 
     if (rwnx_vif->wdev.iftype == NL80211_IFTYPE_MESH_POINT) {
         if (rwnx_vif->is_resending) {
-            desc->host.flags |= TXU_CNTRL_MESH_FWD;
+            desc->host.flags |= cpu_to_le16(TXU_CNTRL_MESH_FWD);
         }
     }
 
 #ifdef CONFIG_RWNX_SPLIT_TX_BUF
-    desc->host.packet_len[0] = frame_len;
+    desc->host.packet_len[0] = cpu_to_le16(frame_len);
 #else
-    desc->host.packet_len = frame_len;
+    desc->host.packet_len = cpu_to_le16(frame_len);
 #endif
 
     txhdr->hw_hdr.cfm.status.value = 0;
@@ -1590,7 +1590,7 @@ netdev_tx_t rwnx_start_xmit(struct sk_buff *skb, struct net_device *dev)
     desc->host.packet_addr = sw_txhdr->dma_addr + frame_oft;
 #endif
 #endif
-    desc->host.status_desc_addr = sw_txhdr->dma_addr;
+    desc->host.status_desc_addr = cpu_to_le32(sw_txhdr->dma_addr);
 
     spin_lock_bh(&rwnx_hw->tx_lock);
     if (rwnx_txq_queue_skb(skb, txq, rwnx_hw, false))
@@ -1774,18 +1774,18 @@ int rwnx_start_mgmt_xmit(struct rwnx_vif *vif, struct rwnx_sta *sta,
     desc->host.staid = (sta) ? sta->sta_idx : 0xFF;
     desc->host.vif_idx = vif->vif_index;
     desc->host.tid = 0xFF;
-    desc->host.flags = TXU_CNTRL_MGMT;
+    desc->host.flags = cpu_to_le16(TXU_CNTRL_MGMT);
     if (robust)
-        desc->host.flags |= TXU_CNTRL_MGMT_ROBUST;
+        desc->host.flags |= cpu_to_le16(TXU_CNTRL_MGMT_ROBUST);
 
 #ifdef CONFIG_RWNX_SPLIT_TX_BUF
-    desc->host.packet_len[0] = frame_len;
+    desc->host.packet_len[0] = cpu_to_le16(frame_len);
 #else
-    desc->host.packet_len = frame_len;
+    desc->host.packet_len = cpu_to_le16(frame_len);
 #endif
 
     if (no_cck) {
-        desc->host.flags |= TXU_CNTRL_MGMT_NO_CCK;
+        desc->host.flags |= cpu_to_le16(TXU_CNTRL_MGMT_NO_CCK);
     }
 
     /* Get DMA Address */
@@ -1804,7 +1804,7 @@ int rwnx_start_mgmt_xmit(struct rwnx_vif *vif, struct rwnx_sta *sta,
     desc->host.packet_addr = sw_txhdr->dma_addr + frame_oft;
 #endif
 	#endif
-    desc->host.status_desc_addr = sw_txhdr->dma_addr;
+    desc->host.status_desc_addr = cpu_to_le32(sw_txhdr->dma_addr);
 
     //----------------------------------------------------------------------
 
@@ -2212,7 +2212,7 @@ int rwnx_txdatacfm(void *pthis, void *host_id)
     rwnx_txq_confirm_any(rwnx_hw, txq, hwq, sw_txhdr);
 
     /* Update txq and HW queue credits */
-    if (sw_txhdr->desc.host.flags & TXU_CNTRL_MGMT) {
+    if (sw_txhdr->desc.host.flags & cpu_to_le16(TXU_CNTRL_MGMT)) {
         trace_printk("done=%d retry_required=%d sw_retry_required=%d acknowledged=%d\n",
                      rwnx_txst.tx_done, rwnx_txst.retry_required,
                      rwnx_txst.sw_retry_required, rwnx_txst.acknowledged);

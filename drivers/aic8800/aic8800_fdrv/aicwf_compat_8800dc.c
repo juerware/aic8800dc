@@ -45,7 +45,7 @@ void rwnx_release_firmware_common(u32** buffer);
 typedef u32 (*array2_tbl_t)[2];
 typedef u32 (*array3_tbl_t)[3];
 
-u32 syscfg_tbl_masked_8800dc[][3] = {
+static u32 syscfg_tbl_masked_8800dc[][3] = {
     //#ifdef CONFIG_PMIC_SETTING
     #if defined(CONFIG_VRF_DCDC_MODE)
     {0x7000216C, (0x3 << 2), (0x1 << 2)}, // pmic_pmu_init
@@ -86,7 +86,7 @@ u32 syscfg_tbl_masked_8800dc[][3] = {
     {0x00000000, 0x00000000, 0x00000000}, // last one
 };
 
-u32 syscfg_tbl_masked_8800dc_h[][3] = {
+static u32 syscfg_tbl_masked_8800dc_h[][3] = {
     {0x7000216C, ((0x3 << 2) | (0x3 << 4)), ((0x2 << 2) | (0x2 << 4))}, // pmic_pmu_init
     {0x70002138, (0xFF << 0), (0xFF << 0)},
     {0x7000213C, (0xFF << 0), (0xFF << 0)},
@@ -115,7 +115,7 @@ u32 syscfg_tbl_masked_8800dc_h[][3] = {
     {0x00000000, 0x00000000, 0x00000000}, // last one
 };
 
-u32 syscfg_tbl_masked_8800dc_u01[][3] = {
+static const u32 syscfg_tbl_masked_8800dc_u01[][3] = {
     //#ifdef CONFIG_PMIC_SETTING
     {0x70001000, (0x1 << 16), (0x1 << 16)}, // for low temperature
     {0x70001028, (0x1 << 6), (0x1 << 6)},
@@ -124,13 +124,13 @@ u32 syscfg_tbl_masked_8800dc_u01[][3] = {
 };
 
 
-u32 syscfg_tbl_8800dc[][2] = {
+static const u32 syscfg_tbl_8800dc[][2] = {
     {0x40500010, 0x00000004},
     {0x40500010, 0x00000006},//160m clk
 };
 
 
-u32 patch_tbl_wifisetting[][2] =
+static const u32 patch_tbl_wifisetting[][2] =
 {
     {0x0004, 0x00020010}, //wdt_reboot_type, wdt_period_sec
     #if !defined(CONFIG_FPGA_VERIFICATION)
@@ -144,7 +144,7 @@ u32 patch_tbl_wifisetting[][2] =
 	{0x0084, 0x00000040},
 };
 
-u32 jump_tbl[][2] =
+static u32 jump_tbl[][2] =
 {
     {296, 0x180001},
     {137, 0x180011},
@@ -155,7 +155,7 @@ u32 jump_tbl[][2] =
 };
 
 
-uint32_t ldpc_cfg_ram[] = {
+static uint32_t ldpc_cfg_ram[] = {
 #if 0//def CONFIG_FPGA_VERIFICATION
     0x00363638,
     0x1DF8F834,
@@ -832,7 +832,7 @@ uint32_t ldpc_cfg_ram[] = {
 };
 
 
-uint32_t agc_cfg_ram[] = {
+static uint32_t agc_cfg_ram[] = {
     0x20000000,
     0x0400000E,
     0x3000200E,
@@ -1347,7 +1347,7 @@ uint32_t agc_cfg_ram[] = {
     0x00000000
 };
 
-uint32_t txgain_map[96] =  {
+static uint32_t txgain_map[96] =  {
 #ifdef CONFIG_FPGA_VERIFICATION
     0x20c0c971,
     0x20c0c980,
@@ -1548,7 +1548,7 @@ uint32_t txgain_map[96] =  {
 #endif
 };
 
-const uint32_t txgain_map_h[96] =
+static const uint32_t txgain_map_h[96] =
 {
     //11b
     0xffd888, //11
@@ -1651,20 +1651,20 @@ const uint32_t txgain_map_h[96] =
     0xffc86b, //7
 };
 
-u32 patch_tbl_func[][2] =
+static u32 patch_tbl_func[][2] =
 {
     {0x00110054, 0x0018186D}, // same as jump_tbl idx 168
     {0x0011005C, 0x0018186D}, // same as jump_tbl idx 168
 };
 
 
-u32 patch_tbl_rf_func[][2] =
+static const u32 patch_tbl_rf_func[][2] =
 {
     {0x00110bf0, 0x00180001},
 };
 
 
-u32 wifi_txgain_table_24g_8800dcdw[32] =
+static const u32 wifi_txgain_table_24g_8800dcdw[32] =
 {
     0xA4B22189, //index 0
     0x00007825,
@@ -1700,7 +1700,7 @@ u32 wifi_txgain_table_24g_8800dcdw[32] =
     0x00004832
 };
 
-u32 wifi_txgain_table_24g_1_8800dcdw[32] =
+static const u32 wifi_txgain_table_24g_1_8800dcdw[32] =
 {
     0x096E2011, //index 0
     0x00004001,
@@ -1736,7 +1736,7 @@ u32 wifi_txgain_table_24g_1_8800dcdw[32] =
     0x00004001,
 };
 
-u32 wifi_txgain_table_24g_8800dcdw_h[32] =
+static const u32 wifi_txgain_table_24g_8800dcdw_h[32] =
 {
     0xA55629C9, //index 0
     0x00005825,
@@ -1772,7 +1772,7 @@ u32 wifi_txgain_table_24g_8800dcdw_h[32] =
     0x00001025,
 };
 
-u32 wifi_txgain_table_24g_1_8800dcdw_h[32] =
+static const u32 wifi_txgain_table_24g_1_8800dcdw_h[32] =
 {
     0x941A2048, //index 0
     0x00001825,
@@ -1808,7 +1808,7 @@ u32 wifi_txgain_table_24g_1_8800dcdw_h[32] =
     0x00001825,
 };
 
-u32 wifi_rxgain_table_24g_20m_8800dcdw[64] = {
+static const u32 wifi_rxgain_table_24g_20m_8800dcdw[64] = {
     0x82f282d1,//index 0
     0x9591a324,
     0x80808419,
@@ -1875,7 +1875,7 @@ u32 wifi_rxgain_table_24g_20m_8800dcdw[64] = {
     0x000000f0
 };
 
-u32 wifi_rxgain_table_24g_40m_8800dcdw[64] = {
+static const u32 wifi_rxgain_table_24g_40m_8800dcdw[64] = {
     0x83428151,//index 0
     0x9631a328,
     0x80808419,
@@ -1943,7 +1943,7 @@ u32 wifi_rxgain_table_24g_40m_8800dcdw[64] = {
 };
 
 //adap test
-u32 adaptivity_patch_tbl[][2] = {
+static const u32 adaptivity_patch_tbl[][2] = {
     {0x000C, 0x0000320A}, //linkloss_thd
     {0x009C, 0x00000000}, //ac_param_conf
     {0x0128, 0xF6140001}, //tx_adaptivity_en
@@ -2063,29 +2063,29 @@ void aicwf_patch_config_8800dc(struct rwnx_hw *rwnx_hw)
         if ((ret = rwnx_send_dbg_mem_read_req(rwnx_hw, cfg_base, &cfm))) {
             AICWFDBG(LOGERROR, "setting base[0x%x] rd fail: %d\n", cfg_base, ret);
         }
-        wifisetting_cfg_addr = cfm.memdata;
+        wifisetting_cfg_addr = le32_to_cpu(cfm.memdata);
 
 		if(chip_sub_id == 0){
 			if ((ret = rwnx_send_dbg_mem_read_req(rwnx_hw, cfg_base + 4, &cfm))) {
 				 AICWFDBG(LOGERROR, "setting base[0x%x] rd fail: %d\n", cfg_base + 4, ret);
 			}
-			jump_tbl_addr = cfm.memdata;
+			jump_tbl_addr = le32_to_cpu(cfm.memdata);
 		}
 
         if ((ret = rwnx_send_dbg_mem_read_req(rwnx_hw, cfg_base + 8, &cfm))) {
             AICWFDBG(LOGERROR, "setting base[0x%x] rd fail: %d\n", cfg_base + 8, ret);
         }
-        ldpc_cfg_addr = cfm.memdata;
+        ldpc_cfg_addr = le32_to_cpu(cfm.memdata);
 
         if ((ret = rwnx_send_dbg_mem_read_req(rwnx_hw, cfg_base + 0xc, &cfm))) {
             AICWFDBG(LOGERROR, "setting base[0x%x] rd fail: %d\n", cfg_base + 0xc, ret);
         }
-        agc_cfg_addr = cfm.memdata;
+        agc_cfg_addr = le32_to_cpu(cfm.memdata);
 
         if ((ret = rwnx_send_dbg_mem_read_req(rwnx_hw, cfg_base + 0x10, &cfm))) {
             AICWFDBG(LOGERROR, "setting base[0x%x] rd fail: %d\n", cfg_base + 0x10, ret);
         }
-        txgain_cfg_addr = cfm.memdata;
+        txgain_cfg_addr = le32_to_cpu(cfm.memdata);
 
        AICWFDBG(LOGINFO, "wifisetting_cfg_addr=%x, ldpc_cfg_addr=%x, agc_cfg_addr=%x, txgain_cfg_addr=%x\n", wifisetting_cfg_addr, ldpc_cfg_addr, agc_cfg_addr, txgain_cfg_addr);
 
@@ -2215,21 +2215,21 @@ int aicwf_set_rf_config_8800dc(struct rwnx_hw *rwnx_hw, struct mm_set_rf_calib_c
 
 	if (testmode == FW_NORMAL_MODE) {
         if (IS_CHIP_ID_H()) {
-            if ((ret = rwnx_send_rf_config_req(rwnx_hw, 0,    1, (u8_l *)wifi_txgain_table_24g_8800dcdw_h, 128)))
+            if ((ret = rwnx_send_rf_config_req(rwnx_hw, 0,    1, (u8_l *)(void *)wifi_txgain_table_24g_8800dcdw_h, 128)))
                 return -1;
-            if ((ret = rwnx_send_rf_config_req(rwnx_hw, 16,    1, (u8_l *)wifi_txgain_table_24g_1_8800dcdw_h, 128)))
+            if ((ret = rwnx_send_rf_config_req(rwnx_hw, 16,    1, (u8_l *)(void *)wifi_txgain_table_24g_1_8800dcdw_h, 128)))
                 return -1;
         } else {
-            if ((ret = rwnx_send_rf_config_req(rwnx_hw, 0,    1, (u8_l *)wifi_txgain_table_24g_8800dcdw, 128)))
+            if ((ret = rwnx_send_rf_config_req(rwnx_hw, 0,    1, (u8_l *)(void *)wifi_txgain_table_24g_8800dcdw, 128)))
                 return -1;
-            if ((ret = rwnx_send_rf_config_req(rwnx_hw, 16,    1, (u8_l *)wifi_txgain_table_24g_1_8800dcdw, 128)))
+            if ((ret = rwnx_send_rf_config_req(rwnx_hw, 16,    1, (u8_l *)(void *)wifi_txgain_table_24g_1_8800dcdw, 128)))
                 return -1;
         }
 
-		if ((ret = rwnx_send_rf_config_req(rwnx_hw, 0,	0, (u8_l *)wifi_rxgain_table_24g_20m_8800dcdw, 256)))
+		if ((ret = rwnx_send_rf_config_req(rwnx_hw, 0,	0, (u8_l *)(void *)wifi_rxgain_table_24g_20m_8800dcdw, 256)))
 			return -1;
 
-		if ((ret = rwnx_send_rf_config_req(rwnx_hw, 32,  0, (u8_l *)wifi_rxgain_table_24g_40m_8800dcdw, 256)))
+		if ((ret = rwnx_send_rf_config_req(rwnx_hw, 32,  0, (u8_l *)(void *)wifi_rxgain_table_24g_40m_8800dcdw, 256)))
 			return -1;
 
 		if ((ret = rwnx_send_rf_calib_req(rwnx_hw, cfm))) {
@@ -2328,8 +2328,8 @@ int aicwf_misc_ram_valid_check_8800dc(struct rwnx_hw *rwnx_hw, int *valid_out)
         AICWFDBG(LOGERROR, "boot argc [0x%x] rd fail: %d\n", boot_argc_read_addr, ret);
             return ret;
     }
-       printk("boot argc %x\n", cfm.memdata); 
-    if (cfm.memdata & 0x10) {
+       printk("boot argc %x\n", le32_to_cpu(cfm.memdata));
+    if (le32_to_cpu(cfm.memdata) & 0x10) {
         *valid_out = 1;
         return ret;
     }
@@ -2339,7 +2339,7 @@ int aicwf_misc_ram_valid_check_8800dc(struct rwnx_hw *rwnx_hw, int *valid_out)
             AICWFDBG(LOGERROR, "flash size[0x%x] rd fail: %d\n", flash_size_mem_addr, ret);
             return ret;
         }
-        flash_size = cfm.memdata & 0xff;
+        flash_size = le32_to_cpu(cfm.memdata) & 0xff;
        printk("flash size %x\n", flash_size); 
         if (flash_size == 0x16) {
             dpd_info_read_addr += 0x4300000;
@@ -2355,7 +2355,7 @@ int aicwf_misc_ram_valid_check_8800dc(struct rwnx_hw *rwnx_hw, int *valid_out)
             AICWFDBG(LOGERROR, "dpd info [0x%x] rd fail: %d\n", dpd_info_read_addr, ret);
             return ret;
         }
-        if (cfm.memdata & (1<<7)) {
+        if (le32_to_cpu(cfm.memdata) & (1<<7)) {
              if (valid_out) {
                 *valid_out = 1;
             }
@@ -2370,7 +2370,7 @@ int aicwf_misc_ram_valid_check_8800dc(struct rwnx_hw *rwnx_hw, int *valid_out)
             AICWFDBG(LOGERROR, "rf misc ram[0x%x] rd fail: %d\n", cfg_base + 0x14, ret);
             return ret;
         }
-        misc_ram_addr = cfm.memdata;
+        misc_ram_addr = le32_to_cpu(cfm.memdata);
         AICWFDBG(LOGERROR, "misc_ram_addr=%x\n", misc_ram_addr);
         // bit_mask
         ram_base_addr = misc_ram_addr + offsetof(rf_misc_ram_t, bit_mask);
@@ -2381,7 +2381,7 @@ int aicwf_misc_ram_valid_check_8800dc(struct rwnx_hw *rwnx_hw, int *valid_out)
                 AICWFDBG(LOGERROR, "bit_mask[0x%x] rd fail: %d\n",  ram_base_addr + i * 4, ret);
                 return ret;
             }
-            bit_mask[i] = cfm.memdata;
+            bit_mask[i] = le32_to_cpu(cfm.memdata);
         }
         AICWFDBG(LOGTRACE, "bit_mask:%x,%x,%x,%x\n",bit_mask[0],bit_mask[1],bit_mask[2],bit_mask[3]);
         if ((bit_mask[0] == 0) && ((bit_mask[1] & 0xFFF00000) == 0x80000000) &&
@@ -2431,7 +2431,7 @@ int aicwf_misc_ram_init_8800dc(struct rwnx_hw *rwnx_hw)
         AICWFDBG(LOGERROR, "rf misc ram[0x%x] rd fail: %d\n", cfg_base + 0x14, ret);
         return ret;
     }
-    misc_ram_addr = cfm.memdata;
+    misc_ram_addr = le32_to_cpu(cfm.memdata);
     AICWFDBG(LOGERROR, "misc_ram_addr=%x\n", misc_ram_addr);
     for (i = 0; i < (misc_ram_size / 4); i++) {
         ret = rwnx_send_dbg_mem_write_req(rwnx_hw, misc_ram_addr + i * 4, 0);
@@ -2483,7 +2483,7 @@ int aicwf_dpd_calib_8800dc(struct rwnx_hw *rwnx_hw, rf_misc_ram_lite_t *dpd_res)
             AICWFDBG(LOGERROR, "rf misc ram[0x%x] rd fail: %d\n", cfg_base + 0x14, ret);
             return ret;
         }
-        misc_ram_addr = cfm.memdata;
+        misc_ram_addr = le32_to_cpu(cfm.memdata);
         // bit_mask
         ram_base_addr = misc_ram_addr + offsetof(rf_misc_ram_t, bit_mask);
         ram_word_cnt = (MEMBER_SIZE(rf_misc_ram_t, bit_mask) + MEMBER_SIZE(rf_misc_ram_t, reserved)) / 4;
@@ -2493,7 +2493,7 @@ int aicwf_dpd_calib_8800dc(struct rwnx_hw *rwnx_hw, rf_misc_ram_lite_t *dpd_res)
                 AICWFDBG(LOGERROR, "bit_mask[0x%x] rd fail: %d\n",  ram_base_addr + i * 4, ret);
                 return ret;
             }
-            dpd_res->bit_mask[i] = cfm.memdata;
+            dpd_res->bit_mask[i] = le32_to_cpu(cfm.memdata);
         }
         // dpd_high
         ram_base_addr = misc_ram_addr + offsetof(rf_misc_ram_t, dpd_high);
@@ -2504,7 +2504,7 @@ int aicwf_dpd_calib_8800dc(struct rwnx_hw *rwnx_hw, rf_misc_ram_lite_t *dpd_res)
                 AICWFDBG(LOGERROR, "bit_mask[0x%x] rd fail: %d\n",  ram_base_addr + i * 4, ret);
                 return ret;
             }
-            dpd_res->dpd_high[i] = cfm.memdata;
+            dpd_res->dpd_high[i] = le32_to_cpu(cfm.memdata);
         }
         // loft_res
         ram_base_addr = misc_ram_addr + offsetof(rf_misc_ram_t, loft_res);
@@ -2515,7 +2515,7 @@ int aicwf_dpd_calib_8800dc(struct rwnx_hw *rwnx_hw, rf_misc_ram_lite_t *dpd_res)
                 AICWFDBG(LOGERROR, "bit_mask[0x%x] rd fail: %d\n",  ram_base_addr + i * 4, ret);
                 return ret;
             }
-            dpd_res->loft_res[i] = cfm.memdata;
+            dpd_res->loft_res[i] = le32_to_cpu(cfm.memdata);
         }
     }
     return ret;
@@ -2540,7 +2540,7 @@ int aicwf_dpd_result_apply_8800dc(struct rwnx_hw *rwnx_hw, rf_misc_ram_lite_t *d
         AICWFDBG(LOGERROR, "rf misc ram[0x%x] rd fail: %d\n", cfg_base + 0x14, ret);
         return ret;
     }
-    misc_ram_addr = cfm.memdata;
+    misc_ram_addr = le32_to_cpu(cfm.memdata);
     AICWFDBG(LOGINFO, "misc_ram_addr: %x\n", misc_ram_addr);
     /* Copy dpd_res on the Embedded side */
     // bit_mask
@@ -2713,9 +2713,9 @@ void system_config_8800dc(struct rwnx_hw *rwnx_hw){
 		AICWFDBG(LOGERROR, "%x rd fail: %d\n", mem_addr, ret);
         return;
     }
-    chip_id = (u8)(rd_mem_addr_cfm.memdata >> 16);
-    printk("%x=%x\n", rd_mem_addr_cfm.memaddr, rd_mem_addr_cfm.memdata);
-    if (((rd_mem_addr_cfm.memdata >> 25) & 0x01UL) == 0x00UL) {
+    chip_id = (u8)(le32_to_cpu(rd_mem_addr_cfm.memdata) >> 16);
+    printk("%x=%x\n", le32_to_cpu(rd_mem_addr_cfm.memaddr), le32_to_cpu(rd_mem_addr_cfm.memdata));
+    if (((le32_to_cpu(rd_mem_addr_cfm.memdata) >> 25) & 0x01UL) == 0x00UL) {
         chip_mcu_id = 1;
     }
     printk("chip_mcu_id %d\n", chip_mcu_id);
@@ -2726,8 +2726,8 @@ void system_config_8800dc(struct rwnx_hw *rwnx_hw){
             AICWFDBG(LOGERROR, "%x rd fail: %d\n", mem_addr, ret);
             return;
         }
-        rd_mem_addr_cfm.memdata |= 0x01;
-        ret = rwnx_send_dbg_mem_write_req(rwnx_hw, cache_mem_addr, rd_mem_addr_cfm.memdata);
+        rd_mem_addr_cfm.memdata |= cpu_to_le32(0x01);
+        ret = rwnx_send_dbg_mem_write_req(rwnx_hw, cache_mem_addr, le32_to_cpu(rd_mem_addr_cfm.memdata));
 
         if (ret) {
             AICWFDBG(LOGERROR, "%x write fail: %d\n", cache_mem_addr, ret);
@@ -2741,7 +2741,7 @@ void system_config_8800dc(struct rwnx_hw *rwnx_hw){
 		AICWFDBG(LOGERROR, "[0x00000020] rd fail: %d\n", ret);
         return;
     }
-    chip_sub_id = (u8)(rd_mem_addr_cfm.memdata);
+    chip_sub_id = (u8)le32_to_cpu(rd_mem_addr_cfm.memdata);
     //printk("%x=%x\n", rd_mem_addr_cfm.memaddr, rd_mem_addr_cfm.memdata);
 	AICWFDBG(LOGINFO, "chip_id=%x, chip_sub_id=%x\n", chip_id, chip_sub_id);
 

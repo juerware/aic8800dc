@@ -132,9 +132,9 @@ int rwnx_parse_phy_configfile(struct rwnx_hw *rwnx_hw, const char *filename,
                             "KARST_TX_IQ_COMP_2_4G_PATH_0=", strlen("00000000"));
     if (tag_ptr != NULL) {
         if (sscanf(tag_ptr, "%08x", &config->karst.tx_iq_comp_2_4G[0]) != 1)
-            config->karst.tx_iq_comp_2_4G[0] = 0x01000000;
+            config->karst.tx_iq_comp_2_4G[0] = cpu_to_le32(0x01000000);
     } else
-        config->karst.tx_iq_comp_2_4G[0] = 0x01000000;
+        config->karst.tx_iq_comp_2_4G[0] = cpu_to_le32(0x01000000);
 
     RWNX_DBG("Karst TX IQ compensation for path 0 on 2.4GHz is: %08X\n", config->karst.tx_iq_comp_2_4G[0]);
 
@@ -143,9 +143,9 @@ int rwnx_parse_phy_configfile(struct rwnx_hw *rwnx_hw, const char *filename,
                             "KARST_TX_IQ_COMP_2_4G_PATH_1=", strlen("00000000"));
     if (tag_ptr != NULL) {
         if (sscanf(tag_ptr, "%08x", &config->karst.tx_iq_comp_2_4G[1]) != 1)
-            config->karst.tx_iq_comp_2_4G[1] = 0x01000000;
+            config->karst.tx_iq_comp_2_4G[1] = cpu_to_le32(0x01000000);
     } else
-        config->karst.tx_iq_comp_2_4G[1] = 0x01000000;
+        config->karst.tx_iq_comp_2_4G[1] = cpu_to_le32(0x01000000);
 
     RWNX_DBG("Karst TX IQ compensation for path 1 on 2.4GHz is: %08X\n", config->karst.tx_iq_comp_2_4G[1]);
 
@@ -154,9 +154,9 @@ int rwnx_parse_phy_configfile(struct rwnx_hw *rwnx_hw, const char *filename,
                             "KARST_RX_IQ_COMP_2_4G_PATH_0=", strlen("00000000"));
     if (tag_ptr != NULL) {
         if (sscanf(tag_ptr, "%08x", &config->karst.rx_iq_comp_2_4G[0]) != 1)
-            config->karst.rx_iq_comp_2_4G[0] = 0x01000000;
+            config->karst.rx_iq_comp_2_4G[0] = cpu_to_le32(0x01000000);
     } else
-        config->karst.rx_iq_comp_2_4G[0] = 0x01000000;
+        config->karst.rx_iq_comp_2_4G[0] = cpu_to_le32(0x01000000);
 
     RWNX_DBG("Karst RX IQ compensation for path 0 on 2.4GHz is: %08X\n", config->karst.rx_iq_comp_2_4G[0]);
 
@@ -165,9 +165,9 @@ int rwnx_parse_phy_configfile(struct rwnx_hw *rwnx_hw, const char *filename,
                             "KARST_RX_IQ_COMP_2_4G_PATH_1=", strlen("00000000"));
     if (tag_ptr != NULL) {
         if (sscanf(tag_ptr, "%08x", &config->karst.rx_iq_comp_2_4G[1]) != 1)
-            config->karst.rx_iq_comp_2_4G[1] = 0x01000000;
+            config->karst.rx_iq_comp_2_4G[1] = cpu_to_le32(0x01000000);
     } else
-        config->karst.rx_iq_comp_2_4G[1] = 0x01000000;
+        config->karst.rx_iq_comp_2_4G[1] = cpu_to_le32(0x01000000);
 
     RWNX_DBG("Karst RX IQ compensation for path 1 on 2.4GHz is: %08X\n", config->karst.rx_iq_comp_2_4G[1]);
 
@@ -176,9 +176,9 @@ int rwnx_parse_phy_configfile(struct rwnx_hw *rwnx_hw, const char *filename,
                             "KARST_TX_IQ_COMP_5G_PATH_0=", strlen("00000000"));
     if (tag_ptr != NULL) {
         if (sscanf(tag_ptr, "%08x", &config->karst.tx_iq_comp_5G[0]) != 1)
-            config->karst.tx_iq_comp_5G[0] = 0x01000000;
+            config->karst.tx_iq_comp_5G[0] = cpu_to_le32(0x01000000);
     } else
-        config->karst.tx_iq_comp_5G[0] = 0x01000000;
+        config->karst.tx_iq_comp_5G[0] = cpu_to_le32(0x01000000);
 
     RWNX_DBG("Karst TX IQ compensation for path 0 on 5GHz is: %08X\n", config->karst.tx_iq_comp_5G[0]);
 
@@ -187,9 +187,9 @@ int rwnx_parse_phy_configfile(struct rwnx_hw *rwnx_hw, const char *filename,
                             "KARST_TX_IQ_COMP_5G_PATH_1=", strlen("00000000"));
     if (tag_ptr != NULL) {
         if (sscanf(tag_ptr, "%08x", &config->karst.tx_iq_comp_5G[1]) != 1)
-            config->karst.tx_iq_comp_5G[1] = 0x01000000;
+            config->karst.tx_iq_comp_5G[1] = cpu_to_le32(0x01000000);
     } else
-        config->karst.tx_iq_comp_5G[1] = 0x01000000;
+        config->karst.tx_iq_comp_5G[1] = cpu_to_le32(0x01000000);
 
     RWNX_DBG("Karst TX IQ compensation for path 1 on 5GHz is: %08X\n", config->karst.tx_iq_comp_5G[1]);
 
@@ -198,9 +198,9 @@ int rwnx_parse_phy_configfile(struct rwnx_hw *rwnx_hw, const char *filename,
                             "KARST_RX_IQ_COMP_5G_PATH_0=", strlen("00000000"));
     if (tag_ptr != NULL) {
         if (sscanf(tag_ptr, "%08x", &config->karst.rx_iq_comp_5G[0]) != 1)
-            config->karst.rx_iq_comp_5G[0] = 0x01000000;
+            config->karst.rx_iq_comp_5G[0] = cpu_to_le32(0x01000000);
     } else
-        config->karst.rx_iq_comp_5G[0] = 0x01000000;
+        config->karst.rx_iq_comp_5G[0] = cpu_to_le32(0x01000000);
 
     RWNX_DBG("Karst RX IQ compensation for path 0 on 5GHz is: %08X\n", config->karst.rx_iq_comp_5G[0]);
 
@@ -209,9 +209,9 @@ int rwnx_parse_phy_configfile(struct rwnx_hw *rwnx_hw, const char *filename,
                             "KARST_RX_IQ_COMP_5G_PATH_1=", strlen("00000000"));
     if (tag_ptr != NULL) {
         if (sscanf(tag_ptr, "%08x", &config->karst.rx_iq_comp_5G[1]) != 1)
-            config->karst.rx_iq_comp_5G[1] = 0x01000000;
+            config->karst.rx_iq_comp_5G[1] = cpu_to_le32(0x01000000);
     } else
-        config->karst.rx_iq_comp_5G[1] = 0x01000000;
+        config->karst.rx_iq_comp_5G[1] = cpu_to_le32(0x01000000);
 
     RWNX_DBG("Karst RX IQ compensation for path 1 on 5GHz is: %08X\n", config->karst.rx_iq_comp_5G[1]);
 

@@ -259,14 +259,14 @@ static const int mcs_map_to_rate[4][3] = {
 
 #define MAX_VHT_RATE(map, nss, bw) (mcs_map_to_rate[bw][map] * (nss))
 
-extern struct ieee80211_regdomain *reg_regdb[];
+extern const struct ieee80211_regdomain *reg_regdb[];
 
 char ccode_channels[200];
 int index_for_channel_list = 0;
 module_param_string(ccode_channels, ccode_channels, 200, 0600);
 
 static void rwnx_get_countrycode_channels(struct wiphy *wiphy,
-		struct ieee80211_regdomain *regdomain){
+		const struct ieee80211_regdomain *regdomain){
 	enum nl80211_band band;
 	struct ieee80211_supported_band *sband;
 	int channel_index;
@@ -324,7 +324,7 @@ static void rwnx_get_countrycode_channels(struct wiphy *wiphy,
 }
 
 
-struct ieee80211_regdomain *getRegdomainFromRwnxDBIndex(struct wiphy *wiphy,
+const struct ieee80211_regdomain *getRegdomainFromRwnxDBIndex(struct wiphy *wiphy,
 	int index)
 {
 	u8 idx;
@@ -344,7 +344,7 @@ struct ieee80211_regdomain *getRegdomainFromRwnxDBIndex(struct wiphy *wiphy,
 
 extern int reg_regdb_size;
 
-struct ieee80211_regdomain *getRegdomainFromRwnxDB(struct wiphy *wiphy,
+const struct ieee80211_regdomain *getRegdomainFromRwnxDB(struct wiphy *wiphy,
 	char *alpha2)
 {
 	u8 idx;

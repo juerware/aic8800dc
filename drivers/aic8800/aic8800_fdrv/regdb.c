@@ -2696,6 +2696,9 @@ static const struct ieee80211_regdomain regdom_ZW = {
 	.n_reg_rules = 4
 };
 
+extern const struct ieee80211_regdomain *reg_regdb[];
+extern int reg_regdb_size;
+
 const struct ieee80211_regdomain *reg_regdb[] = {
 	&regdom_00,
 	&regdom_AD,

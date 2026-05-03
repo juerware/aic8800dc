@@ -316,7 +316,7 @@ static inline int rwnx_rx_channel_survey_ind(struct rwnx_hw *rwnx_hw,
 {
     struct mm_channel_survey_ind *ind = (struct mm_channel_survey_ind *)msg->param;
     // Get the channel index
-    int idx = rwnx_freq_to_idx(rwnx_hw, ind->freq);
+    int idx = rwnx_freq_to_idx(rwnx_hw, le16_to_cpu(ind->freq));
     // Get the survey
     struct rwnx_survey_info *rwnx_survey;
 
@@ -328,8 +328,8 @@ static inline int rwnx_rx_channel_survey_ind(struct rwnx_hw *rwnx_hw,
     rwnx_survey = &rwnx_hw->survey[idx];
 
     // Store the received parameters
-    rwnx_survey->chan_time_ms = ind->chan_time_ms;
-    rwnx_survey->chan_time_busy_ms = ind->chan_time_busy_ms;
+    rwnx_survey->chan_time_ms = le32_to_cpu(ind->chan_time_ms);
+    rwnx_survey->chan_time_busy_ms = le32_to_cpu(ind->chan_time_busy_ms);
     rwnx_survey->noise_dbm = ind->noise_dbm;
     rwnx_survey->filled = (SURVEY_INFO_TIME |
                            SURVEY_INFO_TIME_BUSY);
@@ -695,7 +695,7 @@ static inline int rwnx_rx_scanu_result_ind(struct rwnx_hw *rwnx_hw,
 
     RWNX_DBG(RWNX_FN_ENTRY_STR);
 	
-    chan = ieee80211_get_channel(rwnx_hw->wiphy, ind->center_freq);
+    chan = ieee80211_get_channel(rwnx_hw->wiphy, le16_to_cpu(ind->center_freq));
 
     if (chan != NULL) {
         #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
@@ -703,15 +703,15 @@ static inline int rwnx_rx_scanu_result_ind(struct rwnx_hw *rwnx_hw,
         struct timespec ts;
 		get_monotonic_boottime(&ts);
         //ts = ktime_get_real();
-        mgmt->u.probe_resp.timestamp = ((u64)ts.tv_sec*1000000) + ts.tv_nsec/1000;
+        mgmt->u.probe_resp.timestamp = cpu_to_le64(((u64)ts.tv_sec*1000000) + ts.tv_nsec/1000);
         #else
         struct timespec64 ts;
         ktime_get_real_ts64(&ts);
-        mgmt->u.probe_resp.timestamp = ((u64)ts.tv_sec*1000000) + ts.tv_nsec/1000;
+        mgmt->u.probe_resp.timestamp = cpu_to_le64(((u64)ts.tv_sec*1000000) + ts.tv_nsec/1000);
         #endif
         bss = cfg80211_inform_bss_frame(rwnx_hw->wiphy, chan,
                                         (struct ieee80211_mgmt *)ind->payload,
-                                        ind->length, ind->rssi * 100, GFP_ATOMIC);
+                                        le16_to_cpu(ind->length), ind->rssi * 100, GFP_ATOMIC);
 #if 0
         //print scan result info start
         if(ie != NULL && bss != NULL){
@@ -865,7 +865,7 @@ static inline int rwnx_rx_sm_connect_ind(struct rwnx_hw *rwnx_hw,
 
     /* Retrieve IE addresses and lengths */
     req_ie = (const u8 *)ind->assoc_ie_buf;
-    rsp_ie = req_ie + ind->assoc_req_ie_len;
+    rsp_ie = req_ie + le16_to_cpu(ind->assoc_req_ie_len);
 
 
 	if (rwnx_vif->sta.external_auth)
@@ -888,22 +888,22 @@ static inline int rwnx_rx_sm_connect_ind(struct rwnx_hw *rwnx_hw,
         sta->qos = ind->qos;
         sta->acm = ind->acm;
         sta->ps.active = false;
-        sta->aid = ind->aid;
+        sta->aid = le16_to_cpu(ind->aid);
         sta->band = ind->band;
         sta->width = ind->width;
-        sta->center_freq = ind->center_freq;
-        sta->center_freq1 = ind->center_freq1;
-        sta->center_freq2 = ind->center_freq2;
+        sta->center_freq = le16_to_cpu(ind->center_freq);
+        sta->center_freq1 = le32_to_cpu(ind->center_freq1);
+        sta->center_freq2 = le32_to_cpu(ind->center_freq2);
         rwnx_vif->sta.ap = sta;
 
-        chan = ieee80211_get_channel(rwnx_hw->wiphy, ind->center_freq);
+        chan = ieee80211_get_channel(rwnx_hw->wiphy, le16_to_cpu(ind->center_freq));
         cfg80211_chandef_create(&chandef, chan, NL80211_CHAN_NO_HT);
         if (!rwnx_hw->mod_params->ht_on)
             chandef.width = NL80211_CHAN_WIDTH_20_NOHT;
         else
             chandef.width = chnl2bw[ind->width];
-        chandef.center_freq1 = ind->center_freq1;
-        chandef.center_freq2 = ind->center_freq2;
+        chandef.center_freq1 = le32_to_cpu(ind->center_freq1);
+        chandef.center_freq2 = le32_to_cpu(ind->center_freq2);
         rwnx_chanctx_link(rwnx_vif, ind->ch_idx, &chandef);
         memcpy(sta->mac_addr, ind->bssid.array, ETH_ALEN);
         if (ind->ch_idx == rwnx_hw->cur_chanctx) {
@@ -920,7 +920,7 @@ static inline int rwnx_rx_sm_connect_ind(struct rwnx_hw *rwnx_hw,
         rwnx_mu_group_sta_init(sta, NULL);
         /* Look for TDLS Channel Switch Prohibited flag in the Extended Capability
          * Information Element*/
-        extcap_ie = cfg80211_find_ie(WLAN_EID_EXT_CAPABILITY, rsp_ie, ind->assoc_rsp_ie_len);
+        extcap_ie = cfg80211_find_ie(WLAN_EID_EXT_CAPABILITY, rsp_ie, le16_to_cpu(ind->assoc_rsp_ie_len));
         if (extcap_ie && extcap_ie[1] >= 5) {
             extcap = (void *)(extcap_ie);
             rwnx_vif->tdls_chsw_prohibited = extcap->ext_capab[4] & WLAN_EXT_CAPA5_TDLS_CH_SW_PROHIBITED;
@@ -971,7 +971,7 @@ static inline int rwnx_rx_sm_connect_ind(struct rwnx_hw *rwnx_hw,
 #endif
 		//atomic_set(&rwnx_vif->drv_conn_state, (int)RWNX_DRV_STATUS_CONNECTED);
 
-    } else if (ind->status_code == WLAN_STATUS_NOT_SUPPORTED_AUTH_ALG) {
+    } else if (le16_to_cpu(ind->status_code) == WLAN_STATUS_NOT_SUPPORTED_AUTH_ALG) {
         if (rwnx_vif->wep_enabled) {
             rwnx_vif->wep_auth_err = true;
             AICWFDBG(LOGINFO, "con ind wep_auth_err %d\n", rwnx_vif->wep_auth_err);
@@ -1059,8 +1059,9 @@ static inline int rwnx_rx_sm_connect_ind(struct rwnx_hw *rwnx_hw,
 
     if (!ind->roamed) {//not roaming
         cfg80211_connect_result(dev, (const u8 *)ind->bssid.array, req_ie,
-                                ind->assoc_req_ie_len, rsp_ie,
-                                ind->assoc_rsp_ie_len, ind->status_code,
+                                le16_to_cpu(ind->assoc_req_ie_len), rsp_ie,
+                                le16_to_cpu(ind->assoc_rsp_ie_len),
+                                le16_to_cpu(ind->status_code),
                                 GFP_ATOMIC);
 		atomic_set(&rwnx_vif->drv_conn_state, (int)RWNX_DRV_STATUS_CONNECTED);
 		AICWFDBG(LOGINFO, "%s cfg80211_connect_result pass \r\n", __func__);
@@ -1087,9 +1088,9 @@ static inline int rwnx_rx_sm_connect_ind(struct rwnx_hw *rwnx_hw,
             info.links[0].bssid = (const u8 *)ind->bssid.array;;
 #endif//LINUX_VERSION_CODE < HIGH_KERNEL_VERSION
             info.req_ie = req_ie;
-            info.req_ie_len = ind->assoc_req_ie_len;
+            info.req_ie_len = le16_to_cpu(ind->assoc_req_ie_len);
             info.resp_ie = rsp_ie;
-            info.resp_ie_len = ind->assoc_rsp_ie_len;
+            info.resp_ie_len = le16_to_cpu(ind->assoc_rsp_ie_len);
             AICWFDBG(LOGINFO, "%s roaming success to notify roam \r\n", __func__);
             cfg80211_roamed(dev, &info, GFP_ATOMIC);
 			atomic_set(&rwnx_vif->drv_conn_state, (int)RWNX_DRV_STATUS_CONNECTED);
@@ -1191,8 +1192,9 @@ static inline int rwnx_rx_sm_disconnect_ind(struct rwnx_hw *rwnx_hw,
     /* if vif is not up, rwnx_close has already been called */
     if (rwnx_vif->up) {
         if (!ind->ft_over_ds && !ind->reassoc) {
-            cfg80211_disconnected(dev, ind->reason_code, NULL, 0,
-                                  (ind->reason_code < 1), GFP_ATOMIC);
+            u16 reason_code = le16_to_cpu(ind->reason_code);
+            cfg80211_disconnected(dev, reason_code, NULL, 0,
+                                  (reason_code < 1), GFP_ATOMIC);
         }
         netif_tx_stop_all_queues(dev);
         netif_carrier_off(dev);
@@ -1263,7 +1265,7 @@ static inline int rwnx_rx_sm_external_auth_required_ind(struct rwnx_hw *rwnx_hw,
     params.ssid.ssid_len = ind->ssid.length;
     memcpy(params.ssid.ssid, ind->ssid.array,
            min_t(size_t, ind->ssid.length, sizeof(params.ssid.ssid)));
-    params.key_mgmt_suite = ind->akm;
+    params.key_mgmt_suite = le32_to_cpu(ind->akm);
 
 	while (wdev->conn_owner_nlportid == 0) {
 		AICWFDBG(LOGINFO, "%s WARNING conn_owner_nlportid = 0, msleep 100ms.\r\n", __func__);
@@ -1638,7 +1640,7 @@ void rwnx_rx_handle_msg(struct rwnx_hw *rwnx_hw, struct ipc_e2a_msg *msg)
 	//	rwnx_id2str[MSG_T(msg->id)][MSG_I(msg->id)]);
 	
     rwnx_hw->cmd_mgr->msgind(rwnx_hw->cmd_mgr, msg,
-                            msg_hdlrs[MSG_T(msg->id)][MSG_I(msg->id)]);
+                            msg_hdlrs[MSG_T(le16_to_cpu(msg->id))][MSG_I(le16_to_cpu(msg->id))]);
 }
 
 void rwnx_rx_handle_print(struct rwnx_hw *rwnx_hw, u8 *msg, u32 len)

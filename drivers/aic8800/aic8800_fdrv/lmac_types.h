@@ -50,11 +50,21 @@ typedef uint8_t u8_l;
 typedef int8_t s8_l;
 typedef bool bool_l;
 #endif
-typedef uint16_t u16_l;
+/*
+ * The "_l" suffix marks types that travel on-the-wire to/from firmware
+ * messages (a firmware module is internally called "lmac"). These messages
+ * are always little-endian, so use the kernel's __le types — sparse will
+ * then flag any access site that mixes native and on-wire byte order.
+ *
+ * On little-endian hosts (x86, ARM-LE) these are bit-identical to the plain
+ * uint types, so the runtime cost is zero. On big-endian hosts the explicit
+ * cpu_to_le* / le*_to_cpu conversions in code become real byte-swaps.
+ */
+typedef __le16 u16_l;
 typedef int16_t s16_l;
-typedef uint32_t u32_l;
+typedef __le32 u32_l;
 typedef int32_t s32_l;
-typedef uint64_t u64_l;
+typedef __le64 u64_l;
 
 
 
