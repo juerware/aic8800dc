@@ -2223,8 +2223,10 @@ static int rwnx_plat_userconfig_load(struct rwnx_hw *rwnx_hw) {
 		rwnx_plat_userconfig_load_8800dc(rwnx_hw);
 	}else if(rwnx_hw->usbdev->chipid == PRODUCT_ID_AIC8800DW){
         rwnx_plat_userconfig_load_8800dw(rwnx_hw);
+#ifdef CONFIG_AIC8800D80
     }else if(rwnx_hw->usbdev->chipid == PRODUCT_ID_AIC8800D81){
         rwnx_plat_userconfig_load_8800d80(rwnx_hw);
+#endif
     }
 
 	return 0;

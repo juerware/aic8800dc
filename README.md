@@ -69,6 +69,21 @@ Then, install the driver:
 sudo make install
 ```
 
+### Build options
+
+The build is configured via variables in `drivers/aic8800/aic8800_fdrv/Makefile`. Two are worth knowing about:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `CONFIG_AIC8800D80` | `n` | Build the **8800D80/D81** chip compat layer. This tree targets the **8800DC/DW**, so it is off by default (smaller module). **If your adapter enumerates as 8800D80/D81** it will not initialize unless you set this to `y`. |
+| `CONFIG_RFTEST` | `n` | Build the RF manufacturing/calibration test commands used by the `aicrf_test` tool. Not needed for normal Wi-Fi; enable only for RF bring-up. |
+
+You can override either on the command line without editing the Makefile, e.g. for an 8800D80/D81 device:
+
+```bash
+make CC=${COMPILER} CONFIG_AIC8800D80=y
+```
+
 For any kernel updates, you'll need to reinstall the driver:
 
 ```bash
@@ -131,4 +146,11 @@ sudo make uninstall
   - Endianness — the firmware-message ABI is now correctly typed as `__le16`/`__le32`, with explicit `cpu_to_le*()` / `le*_to_cpu()` conversions at every access site. Zero runtime cost on little-endian hosts (x86, ARM-LE); correct on big-endian.
   - I/O memory — PCI BAR pointers in the DINI/V7 platform back-ends carry the `__iomem` annotation.
   - Several real bugs fixed (sprintf source/dest overlap, fortify-source overflow on the radiotap path, list-mutation outside spinlock during USB teardown, dead-store of param-by-value after `kfree`).
+- Additional safety/maintainability work (latest pass):
+  - **Allocation safety** — added missing `NULL` checks on the scan-request, channel, USB-TX, and scan-result allocations; fixed a double-free / wrong-pointer `vfree` in the USB init error path.
+  - **Untrusted-input validation** — firmware/USB-message station, TID and mesh next-hop indices are now range-checked *before* indexing internal tables; the netlink vendor-command ring name is copied with a length bound (was an unbounded `strcpy` into a 32-byte buffer).
+  - **Timer-API churn** — the `del_timer`→`timer_delete` (6.15) and `from_timer`→`timer_container_of` (6.16) renames are funnelled through `rwnx_del_timer*` / `rwnx_from_timer` macros in `rwnx_compat.h`, so a future rename is a one-line edit instead of a scatter-patch. This also fixed a latent `time_delete_sync` typo in the (non-default) SDIO path.
+  - **Lock contract** — `reord_rxframes_ind()` now documents that the caller must hold `reord_list_lock` and enforces it with `lockdep_assert_held()` under debug kernels.
+  - **Build trimming** — RF test commands and the 8800D80 compat layer are off by default; see *Build options* above.
+  - A root `.gitignore` now keeps kernel build artifacts (`*.o`, `*.ko`, `*.cmd`, `Module.symvers`, …) out of `git status`.
 - The top-level `Makefile` defaults to `CONFIG_PLATFORM_UBUNTU=y`. The Rockchip / Allwinner / Amlogic blocks contain dead vendor paths and are gated off by default.

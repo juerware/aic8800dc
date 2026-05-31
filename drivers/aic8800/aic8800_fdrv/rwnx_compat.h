@@ -432,4 +432,28 @@ enum {
 typedef __s64 time64_t;
 #endif
 
+/* TIMER
+ *
+ * The timer API churned across recent kernels and used to require scattered
+ * #if LINUX_VERSION_CODE blocks at every call site:
+ *   - del_timer()/del_timer_sync() were renamed timer_delete()/timer_delete_sync()
+ *     and the old names removed in 6.15.
+ *   - from_timer() was renamed timer_container_of() in 6.16.
+ * Funnel both through these macros so a future rename is a one-line edit here
+ * instead of a patch across rwnx_rx.c / rwnx_main.c / aicwf_sdio.c / aicwf_tcp_ack.c.
+ */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
+#define rwnx_del_timer(t)      timer_delete(t)
+#define rwnx_del_timer_sync(t) timer_delete_sync(t)
+#else
+#define rwnx_del_timer(t)      del_timer(t)
+#define rwnx_del_timer_sync(t) del_timer_sync(t)
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
+#define rwnx_from_timer(var, t, field) timer_container_of(var, t, field)
+#else
+#define rwnx_from_timer(var, t, field) from_timer(var, t, field)
+#endif
+
 #endif /* _RWNX_COMPAT_H_ */

@@ -61,12 +61,18 @@ CONFIG_RWNX_BFMER ?= n
 
 CONFIG_SDIO_SUPPORT =n
 CONFIG_USB_SUPPORT =y
+# Build the 8800D80/D81 chip compat layer. This is a DC-focused tree, so it
+# defaults off (DC/DW-only module). Set =y if your device enumerates as
+# 8800D80/D81 (chipid PRODUCT_ID_AIC8800D81); otherwise it is dead weight.
+CONFIG_AIC8800D80 =n
 CONFIG_RX_REORDER ?=y
 CONFIG_ARP_OFFLOAD =y
 CONFIG_USE_5G ?= y
 CONFIG_RADAR_OR_IR_DETECT =n
 CONFIG_DOWNLOAD_FW =n
-CONFIG_RFTEST=y
+# RF manufacturing/calibration test commands (used by the aicrf_test tool).
+# Not needed for normal Wi-Fi operation; enable only for RF bring-up/test.
+CONFIG_RFTEST=n
 CONFIG_USB_BT=y
 CONFIG_MAC_RANDOM_IF_NO_MAC_IN_EFUSE = y
 CONFIG_WPA3_FOR_OLD_KERNEL ?= n
@@ -162,9 +168,9 @@ $(MODULE_NAME)-y := \
 	regdb.o                \
 	md5.o                  \
 	aic_vendor.o           \
-	aicwf_compat_8800dc.o  \
-	aicwf_compat_8800d80.o
+	aicwf_compat_8800dc.o
 
+$(MODULE_NAME)-$(CONFIG_AIC8800D80)       += aicwf_compat_8800d80.o
 $(MODULE_NAME)-$(CONFIG_BR_SUPPORT)       += aic_br_ext.o
 $(MODULE_NAME)-$(CONFIG_RWNX_RADAR)       += rwnx_radar.o
 $(MODULE_NAME)-$(CONFIG_DEBUG_FS)         += rwnx_debugfs.o
@@ -230,6 +236,7 @@ ccflags-$(CONFIG_RWNX_DBG) += -DCONFIG_RWNX_DBG
 ccflags-$(CONFIG_RWNX_SW_PROFILING) += -DCONFIG_RWNX_SW_PROFILING
 ccflags-$(CONFIG_RWNX_MUMIMO_TX) += -DCONFIG_RWNX_MUMIMO_TX
 ccflags-$(CONFIG_RFTEST) += -DCONFIG_RFTEST
+ccflags-$(CONFIG_AIC8800D80) += -DCONFIG_AIC8800D80
 
 
 ifeq ($(CONFIG_SDIO_SUPPORT), y)

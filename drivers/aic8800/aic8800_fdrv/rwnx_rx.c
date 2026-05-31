@@ -1441,11 +1441,7 @@ static int reord_flush_tid(struct aicwf_rx_priv *rx_priv, struct sk_buff *skb, u
     preorder_ctrl->enable = false;
     spin_unlock_irqrestore(&preorder_ctrl->reord_list_lock, flags);
     if (timer_pending(&preorder_ctrl->reord_timer))
-    #if LINUX_VERSION_CODE >= KERNEL_VERSION(6,15,0)
-        ret = timer_delete_sync(&preorder_ctrl->reord_timer);
-    #else
-        ret = del_timer_sync(&preorder_ctrl->reord_timer);
-    #endif
+        ret = rwnx_del_timer_sync(&preorder_ctrl->reord_timer);
     cancel_work_sync(&preorder_ctrl->reord_timer_work);
 
     return 0;
@@ -1471,11 +1467,7 @@ void reord_deinit_sta(struct aicwf_rx_priv* rx_priv, struct reord_ctrl_info *reo
 		if(preorder_ctrl->enable){
 			preorder_ctrl->enable = false;
 	        if (timer_pending(&preorder_ctrl->reord_timer)) {
-	        #if LINUX_VERSION_CODE >= KERNEL_VERSION(6,15,0)
-                ret = timer_delete_sync(&preorder_ctrl->reord_timer);
-            #else
-	            ret = del_timer_sync(&preorder_ctrl->reord_timer);
-            #endif
+	            ret = rwnx_del_timer_sync(&preorder_ctrl->reord_timer);
 	        }
 	        cancel_work_sync(&preorder_ctrl->reord_timer_work);
 		}
@@ -1653,18 +1645,25 @@ static bool reord_rxframes_process(struct aicwf_rx_priv *rx_priv, struct reord_c
     return bPktInBuf;
 }
 
+/*
+ * CONTRACT: the caller MUST hold preorder_ctrl->reord_list_lock.
+ * This function walks and mutates preorder_ctrl->reord_list (list_del_init)
+ * without taking the lock itself; both call sites (reord_timeout_worker and
+ * reorder_process_unit) acquire reord_list_lock around the call. Do not call
+ * this with the lock released. The lockdep_assert below enforces the contract
+ * in debug builds and compiles to nothing otherwise.
+ */
 static void reord_rxframes_ind(struct aicwf_rx_priv *rx_priv,
     struct reord_ctrl *preorder_ctrl)
 {
     struct list_head *phead, *plist;
     struct recv_msdu *prframe;
 
-	//spin_lock_bh(&preorder_ctrl->reord_list_lock);//AIDEN
+    lockdep_assert_held(&preorder_ctrl->reord_list_lock);
+
     phead = &preorder_ctrl->reord_list;
     while (1) {
-        //spin_lock_bh(&preorder_ctrl->reord_list_lock);
         if (list_empty(phead)) {
-            //spin_unlock_bh(&preorder_ctrl->reord_list_lock);
             break;
         }
 
@@ -1673,14 +1672,11 @@ static void reord_rxframes_ind(struct aicwf_rx_priv *rx_priv,
 
         if (!SN_LESS(preorder_ctrl->ind_sn, prframe->seq_num)) {
             list_del_init(&(prframe->reord_pending_list));
-            //spin_unlock_bh(&preorder_ctrl->reord_list_lock);
 			reord_single_frame_ind(rx_priv, prframe);
         } else {
-            //spin_unlock_bh(&preorder_ctrl->reord_list_lock);
             break;
         }
     }
-	//spin_unlock_bh(&preorder_ctrl->reord_list_lock);//AIDEN
 }
 
 int reorder_timeout = REORDER_UPDATE_TIME;
@@ -1695,10 +1691,8 @@ void reord_timeout_handler (struct timer_list *t)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
 	struct reord_ctrl *preorder_ctrl = (struct reord_ctrl *)data;
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
-	struct reord_ctrl *preorder_ctrl = timer_container_of(preorder_ctrl, t, reord_timer);
 #else
-	struct reord_ctrl *preorder_ctrl = from_timer(preorder_ctrl, t, reord_timer);
+	struct reord_ctrl *preorder_ctrl = rwnx_from_timer(preorder_ctrl, t, reord_timer);
 #endif
 
 	AICWFDBG(LOGTRACE, "%s Enter \r\n", __func__);
@@ -1865,11 +1859,7 @@ static int reord_process_unit(struct aicwf_rx_priv *rx_priv, struct sk_buff *skb
         }
     } else {
 		if(timer_pending(&preorder_ctrl->reord_timer)) {
-	    #if LINUX_VERSION_CODE >= KERNEL_VERSION(6,15,0)
-            ret = timer_delete(&preorder_ctrl->reord_timer);
-        #else
-	        ret = del_timer(&preorder_ctrl->reord_timer);
-        #endif
+	        ret = rwnx_del_timer(&preorder_ctrl->reord_timer);
 		}
     }
 

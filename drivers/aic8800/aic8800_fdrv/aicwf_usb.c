@@ -1492,6 +1492,15 @@ static int aicwf_usb_bus_txdata(struct device *dev, struct sk_buff *skb)
         buf = usb_buf->data_buf;
         #else
         buf = kmalloc(skb->len + 1, GFP_ATOMIC/*GFP_KERNEL*/);
+        if (!buf) {
+            /* return the dequeued tx buffer and drop the frame */
+            aicwf_usb_tx_queue(usb_dev, &usb_dev->tx_free_list, usb_buf,
+                               &usb_dev->tx_free_count, &usb_dev->tx_free_lock);
+            kmem_cache_free(rwnx_hw->sw_txhdr_cache, txhdr->sw_hdr);
+            dev_kfree_skb_any(skb);
+            ret = -ENOMEM;
+            goto flow_ctrl;
+        }
         #endif
         index += sizeof(usb_header);
         memcpy(&buf[index], (u8 *)(long)&txhdr->sw_hdr->desc, sizeof(struct txdesc_api));
@@ -1561,11 +1570,17 @@ static int aicwf_usb_bus_txdata(struct device *dev, struct sk_buff *skb)
     #endif
 	usb_buf->usb_align_data = (u8*)kmalloc(sizeof(u8) * buf_len + align_param, GFP_ATOMIC);
 
-	align = ((unsigned long)(usb_buf->usb_align_data)) & (align_param - 1);
-	memcpy(usb_buf->usb_align_data + (align_param - align), buf, buf_len);
+	if (usb_buf->usb_align_data) {
+		align = ((unsigned long)(usb_buf->usb_align_data)) & (align_param - 1);
+		memcpy(usb_buf->usb_align_data + (align_param - align), buf, buf_len);
 
-    usb_fill_bulk_urb(usb_buf->urb, usb_dev->udev, usb_dev->bulk_out_pipe,
-                usb_buf->usb_align_data + (align_param - align), buf_len, aicwf_usb_tx_complete, usb_buf);
+		usb_fill_bulk_urb(usb_buf->urb, usb_dev->udev, usb_dev->bulk_out_pipe,
+		            usb_buf->usb_align_data + (align_param - align), buf_len, aicwf_usb_tx_complete, usb_buf);
+	} else {
+		/* alignment buffer alloc failed: fall back to an unaligned transfer */
+		usb_fill_bulk_urb(usb_buf->urb, usb_dev->udev, usb_dev->bulk_out_pipe,
+		            buf, buf_len, aicwf_usb_tx_complete, usb_buf);
+	}
 #else
 	usb_fill_bulk_urb(usb_buf->urb, usb_dev->udev, usb_dev->bulk_out_pipe,
 			buf, buf_len, aicwf_usb_tx_complete, usb_buf);
@@ -2087,16 +2102,14 @@ static int aicwf_usb_probe(struct usb_interface *intf, const struct usb_device_i
 
     if(!usb_dev->usb_tx_buf || !usb_dev->usb_rx_buf){
         if(usb_dev->usb_tx_buf){
-            vfree(usb_dev);
+            vfree(usb_dev->usb_tx_buf);
         }
-        
-        if(usb_dev->usb_tx_buf){
-            vfree(usb_dev);
+
+        if(usb_dev->usb_rx_buf){
+            vfree(usb_dev->usb_rx_buf);
         }
-        
-        if(usb_dev){
-            kfree(usb_dev);
-        }
+
+        kfree(usb_dev);
         AICWFDBG(LOGERROR, "%s usb_tx_buf or usb_rx_buf vmalloc fail\r\n", __func__);
         return -ENOMEM;
     }

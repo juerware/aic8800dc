@@ -1778,6 +1778,7 @@ static int parse_line (char *line, char *argv[])
     return (nargs);
 }
 
+#ifdef CONFIG_RFTEST
 static unsigned int command_strtoul(const char *cp, char **endp, unsigned int base)
 {
     unsigned int result = 0, value, is_neg=0;
@@ -1810,6 +1811,7 @@ static unsigned int command_strtoul(const char *cp, char **endp, unsigned int ba
         *endp = (char *)cp;
     return result;
 }
+#endif /* CONFIG_RFTEST */
 
 
 static int handle_private_cmd(struct net_device *net, char *command, u32 cmd_len)
@@ -1844,11 +1846,11 @@ static int handle_private_cmd(struct net_device *net, char *command, u32 cmd_len
     u8_l dh_cmd_rxdh[17];
     u8_l dh_cmd_stop[5];
     #endif
-    #endif
 	u8_l buf[2];
 	s8_l freq_ = 0;
 	u8_l func = 0;
 	u8_l state = 0;
+    #endif
 
     RWNX_DBG(RWNX_FN_ENTRY_STR);
 
@@ -3247,11 +3249,8 @@ static void aicwf_p2p_alive_timeout(struct timer_list *t)
     #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
     rwnx_vif = (struct rwnx_vif *)data;
     rwnx_hw = rwnx_vif->rwnx_hw;
-    #elif LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
-    rwnx_hw = timer_container_of(rwnx_hw, t, p2p_alive_timer);
-    rwnx_vif = rwnx_hw->p2p_dev_vif;
     #else
-    rwnx_hw = from_timer(rwnx_hw, t, p2p_alive_timer);
+    rwnx_hw = rwnx_from_timer(rwnx_hw, t, p2p_alive_timer);
     rwnx_vif = rwnx_hw->p2p_dev_vif;
     #endif
 
@@ -3498,11 +3497,7 @@ static int rwnx_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wde
 #if 0
 	if (rwnx_vif == rwnx_hw->p2p_dev_vif) {
 		if (timer_pending(&rwnx_hw->p2p_alive_timer)) {
-		#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
-            timer_delete_sync(&rwnx_hw->p2p_alive_timer);
-        #else
-			del_timer_sync(&rwnx_hw->p2p_alive_timer);
-        #endif
+            rwnx_del_timer_sync(&rwnx_hw->p2p_alive_timer);
 		}
 	}
 #endif
@@ -3751,11 +3746,7 @@ static void rwnx_cfgp2p_stop_p2p_device(struct wiphy *wiphy, struct wireless_dev
 	if (rwnx_vif == rwnx_hw->p2p_dev_vif) {
 		rwnx_hw->is_p2p_alive = 0;
 		if (timer_pending(&rwnx_hw->p2p_alive_timer)) {
-			#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
-            timer_delete_sync(&rwnx_hw->p2p_alive_timer);
-            #else
-			del_timer_sync(&rwnx_hw->p2p_alive_timer);
-            #endif
+            rwnx_del_timer_sync(&rwnx_hw->p2p_alive_timer);
 		}
 		if (rwnx_vif->up) {
 			rwnx_send_remove_if(rwnx_hw, rwnx_vif->vif_index, true);
@@ -4271,6 +4262,10 @@ static int rwnx_cfg80211_sched_scan_start(struct wiphy *wiphy,
     }
 
     scan_request = (struct cfg80211_scan_request *)kmalloc(sizeof(struct cfg80211_scan_request), GFP_KERNEL);
+    if (!scan_request) {
+        AICWFDBG(LOGERROR, "%s scan_request kmalloc fail\r\n", __func__);
+        return -ENOMEM;
+    }
 
     scan_request->ssids = request->ssids;
     scan_request->n_channels = request->n_channels;
@@ -5699,7 +5694,8 @@ struct ieee80211_channel *rwnx_cfg80211_get_channel(struct wiphy *wiphy)
 
     if(found && rwnx_hw->set_chan.center_freq) {
         chan = kzalloc(sizeof(struct ieee80211_channel), GFP_KERNEL);
-        memcpy((u8 *)chan, (u8 *)&rwnx_hw->set_chan, sizeof(struct ieee80211_channel));
+        if (chan)
+            memcpy((u8 *)chan, (u8 *)&rwnx_hw->set_chan, sizeof(struct ieee80211_channel));
     }
 
     return chan;
@@ -9231,8 +9227,10 @@ static int rwnx_ic_system_init(struct rwnx_hw *rwnx_hw){
 		if (start_from_bootrom(rwnx_hw))
 			return -1;
 #endif
+#ifdef CONFIG_AIC8800D80
 	}else if(rwnx_hw->usbdev->chipid == PRODUCT_ID_AIC8800D81){
 		rwnx_plat_userconfig_load_8800d80(rwnx_hw);
+#endif
 	}
 
 	return 0;
@@ -9265,9 +9263,11 @@ static int rwnx_ic_rf_init(struct rwnx_hw *rwnx_hw){
 			rwnx_hw->usbdev->chipid == PRODUCT_ID_AIC8800DW){
 		if ((ret = aicwf_set_rf_config_8800dc(rwnx_hw, &cfm)))
 			return -1;
+#ifdef CONFIG_AIC8800D80
 	}else if(rwnx_hw->usbdev->chipid == PRODUCT_ID_AIC8800D81){
 		if ((ret = aicwf_set_rf_config_8800d80(rwnx_hw, &cfm)))
 			return -1;
+#endif
 	}
 #ifdef CONFIG_5M10M
 	rwnx_send_vendor_hwconfig_req(rwnx_hw, hwconfig_id, param);

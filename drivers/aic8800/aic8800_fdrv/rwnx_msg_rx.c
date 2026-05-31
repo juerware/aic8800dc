@@ -519,22 +519,25 @@ static inline int rwnx_rx_ps_change_ind(struct rwnx_hw *rwnx_hw,
                                         struct ipc_e2a_msg *msg)
 {
     struct mm_ps_change_ind *ind = (struct mm_ps_change_ind *)msg->param;
-    struct rwnx_sta *sta = &rwnx_hw->sta_table[ind->sta_idx];
+    struct rwnx_sta *sta;
 
     RWNX_DBG(RWNX_FN_ENTRY_STR);
 
-#if 1//2022-01-15 add for rwnx_hw->vif_table[sta->vif_idx] if null when rwnx_close
-	if (!rwnx_hw->vif_table[sta->vif_idx]){
-        wiphy_err(rwnx_hw->wiphy, "rwnx_hw->vif_table[sta->vif_idx] is null\n");	
-		return 0;
-	}
-#endif
-
+    /* Validate the fw-reported index before using it to index sta_table */
     if (ind->sta_idx >= (NX_REMOTE_STA_MAX + NX_VIRT_DEV_MAX)) {
         wiphy_err(rwnx_hw->wiphy, "Invalid sta index reported by fw %d\n",
                   ind->sta_idx);
         return 1;
     }
+
+    sta = &rwnx_hw->sta_table[ind->sta_idx];
+
+#if 1//2022-01-15 add for rwnx_hw->vif_table[sta->vif_idx] if null when rwnx_close
+	if (!rwnx_hw->vif_table[sta->vif_idx]){
+        wiphy_err(rwnx_hw->wiphy, "rwnx_hw->vif_table[sta->vif_idx] is null\n");
+		return 0;
+	}
+#endif
 
     netdev_dbg(rwnx_hw->vif_table[sta->vif_idx]->ndev,
                "Sta %d, change PS mode to %s", sta->sta_idx,
@@ -736,22 +739,41 @@ static inline int rwnx_rx_scanu_result_ind(struct rwnx_hw *rwnx_hw,
 
 #ifdef CONFIG_USE_WIRELESS_EXT
 		if(rwnx_hw->wext_scan){
-			
+			/* length is fw-supplied; cap to the IPC param buffer so we
+			 * neither over-read ind->payload nor make a huge allocation */
+			u32 payload_len = ind->length;
+
+			if (payload_len > IPC_E2A_MSG_PARAM_SIZE * sizeof(u32_l))
+				payload_len = IPC_E2A_MSG_PARAM_SIZE * sizeof(u32_l);
+
 			scan_re_wext = (struct scanu_result_wext *)vmalloc(sizeof(struct scanu_result_wext));
-			scan_re_wext->ind = (struct scanu_result_ind *)vmalloc(sizeof(struct scanu_result_ind));
-			scan_re_wext->payload = (u32_l *)vmalloc(sizeof(u32_l) * ind->length);
+			if (scan_re_wext) {
+				scan_re_wext->ind = (struct scanu_result_ind *)vmalloc(sizeof(struct scanu_result_ind));
+				scan_re_wext->payload = (u32_l *)vmalloc(payload_len);
 
-			memset(scan_re_wext->ind, 0, sizeof(struct scanu_result_ind));
-			memset(scan_re_wext->payload, 0, ind->length);
-			
-			memcpy(scan_re_wext->ind, ind, sizeof(struct scanu_result_ind));
-			memcpy(scan_re_wext->payload, ind->payload, ind->length);
-	
-			scan_re_wext->bss = bss;
+				if (scan_re_wext->ind && scan_re_wext->payload) {
+					memset(scan_re_wext->ind, 0, sizeof(struct scanu_result_ind));
+					memset(scan_re_wext->payload, 0, payload_len);
 
-			INIT_LIST_HEAD(&scan_re_wext->scanu_re_list);
-			list_add_tail(&scan_re_wext->scanu_re_list, &rwnx_hw->wext_scanre_list);
-			return 0;
+					memcpy(scan_re_wext->ind, ind, sizeof(struct scanu_result_ind));
+					memcpy(scan_re_wext->payload, ind->payload, payload_len);
+					/* keep the copied length consistent with what we copied */
+					scan_re_wext->ind->length = payload_len;
+
+					scan_re_wext->bss = bss;
+
+					INIT_LIST_HEAD(&scan_re_wext->scanu_re_list);
+					list_add_tail(&scan_re_wext->scanu_re_list, &rwnx_hw->wext_scanre_list);
+					return 0;
+				}
+
+				/* partial allocation failure: clean up and fall through */
+				if (scan_re_wext->ind)
+					vfree(scan_re_wext->ind);
+				if (scan_re_wext->payload)
+					vfree(scan_re_wext->payload);
+				vfree(scan_re_wext);
+			}
 		}
 #endif
 
@@ -796,6 +818,15 @@ static inline int rwnx_rx_me_tx_credits_update_ind(struct rwnx_hw *rwnx_hw,
     struct me_tx_credits_update_ind *ind = (struct me_tx_credits_update_ind *)msg->param;
 
     RWNX_DBG(RWNX_FN_ENTRY_STR);
+
+    /* sta_idx / tid are supplied by the fw and used to index sta_table / txq */
+    if (ind->sta_idx >= (NX_REMOTE_STA_MAX + NX_VIRT_DEV_MAX) ||
+        ind->tid >= NX_NB_TID_PER_STA) {
+        wiphy_err(rwnx_hw->wiphy,
+                  "Invalid credit update reported by fw (sta %d, tid %d)\n",
+                  ind->sta_idx, ind->tid);
+        return 1;
+    }
 
     rwnx_txq_credit_update(rwnx_hw, ind->sta_idx, ind->tid, ind->credits);
 
@@ -1458,6 +1489,13 @@ static inline int rwnx_rx_mesh_path_update_ind(struct rwnx_hw *rwnx_hw,
         }
     }
     else {
+        /* nhop_sta_idx (fw-supplied) is used below to index sta_table */
+        if (ind->nhop_sta_idx >= (NX_REMOTE_STA_MAX + NX_VIRT_DEV_MAX)) {
+            wiphy_err(rwnx_hw->wiphy,
+                      "Invalid nhop sta index reported by fw %d\n",
+                      ind->nhop_sta_idx);
+            return 1;
+        }
         if (found) {
             // Update the Next Hop STA
             mesh_path->p_nhop_sta = &rwnx_hw->sta_table[ind->nhop_sta_idx];

@@ -491,7 +491,13 @@ static int aicwf_vendor_logger_start_logging(struct wiphy *wiphy, struct wireles
 			size = nla_get_u32(iter);
 			break;
 		case LOGGER_ATTRIBUTE_RING_NAME:
-			strcpy(rb.name, nla_data(iter));
+			{
+				u32 nlen = nla_len(iter);
+				if (nlen >= sizeof(rb.name))
+					nlen = sizeof(rb.name) - 1;
+				memcpy(rb.name, nla_data(iter), nlen);
+				rb.name[nlen] = '\0';
+			}
 			break;
 		default:
 			AICWFDBG(LOGERROR, "%s(%d), Unknown type: %d\n", __func__, __LINE__, type);
@@ -525,7 +531,13 @@ static int aicwf_vendor_logger_get_ring_data(struct wiphy *wiphy, struct wireles
 		type = nla_type(iter);
 		switch (type) {
 		case LOGGER_ATTRIBUTE_RING_NAME:
-			strcpy(rb.name, nla_data(iter));
+			{
+				u32 nlen = nla_len(iter);
+				if (nlen >= sizeof(rb.name))
+					nlen = sizeof(rb.name) - 1;
+				memcpy(rb.name, nla_data(iter), nlen);
+				rb.name[nlen] = '\0';
+			}
 			break;
 		default:
 			pr_err("%s(%d), Unknown type: %d\n", __func__, __LINE__, type);

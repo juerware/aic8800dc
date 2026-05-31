@@ -26,6 +26,20 @@ This produces:
 - `aic8800_fdrv/aic8800_fdrv.ko`
 - `aic_load_fw/aic_load_fw.ko`
 
+## Build Options
+
+Configured in `drivers/aic8800/aic8800_fdrv/Makefile`; override on the command line if needed:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `CONFIG_AIC8800D80` | `n` | 8800D80/D81 chip compat layer. Off by default (this is a DC/DW tree). Set `=y` **only** if the adapter enumerates as 8800D80/D81, otherwise it won't init. |
+| `CONFIG_RFTEST` | `n` | RF test commands for the `aicrf_test` tool. Off by default; enable only for RF bring-up. |
+
+```bash
+# Example: build for an 8800D80/D81 device
+make CC=${COMPILER} CONFIG_AIC8800D80=y
+```
+
 ## Install
 
 > Only required if you want to load the driver on boot via `modprobe`.
@@ -91,4 +105,6 @@ sudo make uninstall
 ## Notes
 
 - The `Makefile` defaults to `CONFIG_PLATFORM_UBUNTU=y` and picks up `/lib/modules/$(uname -r)/build`, so no extra flags are needed.
-- Tested clean build (0 errors, 0 warnings) against kernel **7.0.0-15-generic** with **gcc 15.2.0**.
+- Tested clean build (0 errors, 0 warnings) against kernel **7.0.0-15-generic** with **gcc 15.2.0**; also rebuilt clean against **7.0.0-22-generic**.
+- The default build is **DC/DW-only** and excludes RF test commands (`CONFIG_AIC8800D80=n`, `CONFIG_RFTEST=n`). The `.ko` is ~675 KB smaller as a result. See *Build Options* if you need the D80/D81 or RF-test paths.
+- Build artifacts are now covered by a root `.gitignore`, so `git status` stays clean after a build.
