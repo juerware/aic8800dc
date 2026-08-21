@@ -214,8 +214,20 @@ void aicwf_bus_deinit(struct device *dev)
     bus_if = dev_get_drvdata(dev);
     aicwf_bus_stop(bus_if);
 
+    if (bus_if->bustx_thread) {
+		AICWFDBG(LOGINFO, "%s stop to bustx_thread!! \r\n", __func__);
+
+
+		complete_all(&bus_if->bustx_trgg);
+        kthread_stop(bus_if->bustx_thread);
+        bus_if->bustx_thread = NULL;
+    }
+
 #ifdef AICWF_USB_SUPPORT
     usb = bus_if->bus_priv.usb;
+#ifdef CONFIG_TX_TASKLET//AIDEN tasklet
+	tasklet_kill(&usb->xmit_tasklet);
+#endif
 	aicwf_usb_cancel_all_urbs(usb);//AIDEN
 
     if(g_rwnx_plat && g_rwnx_plat->enabled){
@@ -244,23 +256,10 @@ void aicwf_bus_deinit(struct device *dev)
         bus_if->cmd_buf = NULL;
     }
 
-    if (bus_if->bustx_thread) {
-		AICWFDBG(LOGINFO, "%s stop to bustx_thread!! \r\n", __func__);
-
-
-		complete_all(&bus_if->bustx_trgg);
-        kthread_stop(bus_if->bustx_thread);
-        bus_if->bustx_thread = NULL;
-    }
-
     if (usb->rx_priv)
         aicwf_rx_deinit(usb->rx_priv);
 
     rwnx_cmd_mgr_deinit(&usb->cmd_mgr);
-
-#ifdef CONFIG_TX_TASKLET//AIDEN tasklet
-		tasklet_kill(&usb->xmit_tasklet);
-#endif
 
 	AICWFDBG(LOGINFO, "%s Exit \n", __func__);
 }
@@ -730,14 +729,16 @@ int aicwf_process_rxframes(struct aicwf_rx_priv *rx_priv)
 	        pkt_len = (*skb->data | (*(skb->data + 1) << 8));
 	        //printk("p:%d, s:%d , %x\n", pkt_len, skb->len, data[2]);
 	        if (pkt_len > 1600) {
-	            dev_kfree_skb(skb);
-	            atomic_dec(&rx_priv->rx_cnt);
-	                continue;
+	            break;
 	        }
 
 	        if((skb->data[2] & USB_TYPE_CFG) != USB_TYPE_CFG) { // type : data
 				aggr_len = pkt_len + RX_HWHRD_LEN;
 				adjust_len = aggr_len;
+	            if (aggr_len > skb->len) {
+	                txrx_err("aggr_len %u exceeds remaining skb len %u, drop\n", aggr_len, skb->len);
+	                break;
+	            }
 	            skb_inblock = __dev_alloc_skb(aggr_len + CCMP_OR_WEP_INFO, GFP_KERNEL);//8 is for ccmp mic or wep icv
 	            if(skb_inblock == NULL){
 	                txrx_err("no more space! skip!\n");

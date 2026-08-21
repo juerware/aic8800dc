@@ -264,7 +264,11 @@ ccflags-y += -DNX_TXQ_CNT=4
 endif
 
 # For old kernel (<=3.19)
-ifeq ($(shell test $(VERSION) -lt 4 -a "$(CONFIG_VENDOR_RWNX)" = y ; echo $$?),0)
+# VERSION is only set when this Makefile is parsed via the kernel's top-level
+# Kbuild Makefile (M=... builds); guard against it being empty when this
+# Makefile is invoked standalone (e.g. `make clean`), which would otherwise
+# make `test` fail with "unexpected operator".
+ifeq ($(shell test -n "$(VERSION)" -a "$(VERSION)" -lt 4 -a "$(CONFIG_VENDOR_RWNX)" = y 2>/dev/null; echo $$?),0)
 ccflags-y += -DCONFIG_VENDOR_RWNX_VHT_NO80
 endif
 

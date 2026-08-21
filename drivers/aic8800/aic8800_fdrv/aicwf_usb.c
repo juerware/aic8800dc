@@ -296,8 +296,12 @@ static void aicwf_usb_rx_complete(struct urb *urb)
                     g_rwnx_plat->wait_disconnect_cb = true;
                     if(atomic_read(&aicwf_deinit_atomic) > 0){
                         atomic_set(&aicwf_deinit_atomic, 0);
-                        down(&aicwf_deinit_sem);
-                        AICWFDBG(LOGINFO, "%s need to wait for disconnect callback \r\n", __func__);
+                        /* URB completion runs in atomic context: down() may not sleep here. */
+                        if (down_trylock(&aicwf_deinit_sem)) {
+                            g_rwnx_plat->wait_disconnect_cb = false;
+                        } else {
+                            AICWFDBG(LOGINFO, "%s need to wait for disconnect callback \r\n", __func__);
+                        }
                     }else{
                         g_rwnx_plat->wait_disconnect_cb = false;
                     }
@@ -383,8 +387,12 @@ static void aicwf_usb_rx_complete(struct urb *urb)
 				g_rwnx_plat->wait_disconnect_cb = true;
 				if(atomic_read(&aicwf_deinit_atomic) > 0){
 					atomic_set(&aicwf_deinit_atomic, 0);
-					down(&aicwf_deinit_sem);
-					AICWFDBG(LOGINFO, "%s need to wait for disconnect callback \r\n", __func__);
+					/* URB completion runs in atomic context: down() may not sleep here. */
+					if (down_trylock(&aicwf_deinit_sem)) {
+						g_rwnx_plat->wait_disconnect_cb = false;
+					} else {
+						AICWFDBG(LOGINFO, "%s need to wait for disconnect callback \r\n", __func__);
+					}
 				}else{
 					g_rwnx_plat->wait_disconnect_cb = false;
 				}
@@ -951,8 +959,10 @@ static void aicwf_usb_tx_process(struct aic_usb_dev *usb_dev)
         }
         data = usb_buf->skb->data;
 
+        usb_anchor_urb(usb_buf->urb, &usb_dev->tx_submitted);
         ret = usb_submit_urb(usb_buf->urb, GFP_KERNEL);
         if (ret) {
+            usb_unanchor_urb(usb_buf->urb);
             AICWFDBG(LOGERROR, "aicwf_usb_bus_tx usb_submit_urb FAILED err:%d\n", ret);
             #ifdef CONFIG_USB_TX_AGGR
             aicwf_usb_tx_queue(usb_dev, &usb_dev->tx_post_list, usb_buf,
@@ -1682,6 +1692,7 @@ static void aicwf_usb_cancel_all_urbs_(struct aic_usb_dev *usb_dev)
     }
     spin_unlock_irqrestore(&usb_dev->tx_post_lock, flags);
 
+    usb_kill_anchored_urbs(&usb_dev->tx_submitted);
     usb_kill_anchored_urbs(&usb_dev->rx_submitted);
 #ifdef CONFIG_USB_MSG_IN_EP
 	if(usb_dev->chipid != PRODUCT_ID_AIC8801 &&
@@ -1718,6 +1729,12 @@ static void aicwf_usb_bus_stop(struct device *dev)
 
 static void aicwf_usb_deinit(struct aic_usb_dev *usbdev)
 {
+#ifdef CONFIG_USB_TX_AGGR
+    if (usbdev->tx_priv) {
+        aicwf_tx_deinit(usbdev->tx_priv);
+        usbdev->tx_priv = NULL;
+    }
+#endif
     cancel_work_sync(&usbdev->rx_urb_work);
     aicwf_usb_free_urb(&usbdev->rx_free_list, &usbdev->rx_free_lock);
     aicwf_usb_free_urb(&usbdev->tx_free_list, &usbdev->tx_free_lock);
@@ -1757,6 +1774,7 @@ static int aicwf_usb_init(struct aic_usb_dev *usb_dev)
 
     init_waitqueue_head(&usb_dev->msg_wait);
     init_usb_anchor(&usb_dev->rx_submitted);
+    init_usb_anchor(&usb_dev->tx_submitted);
 #ifdef CONFIG_USB_MSG_IN_EP
 	if(usb_dev->chipid != PRODUCT_ID_AIC8801 &&
         usb_dev->chipid != PRODUCT_ID_AIC8800D81){

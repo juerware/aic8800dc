@@ -1671,14 +1671,20 @@ static msg_cb_fct *msg_hdlrs[] = {
  */
 void rwnx_rx_handle_msg(struct rwnx_hw *rwnx_hw, struct ipc_e2a_msg *msg)
 {
-	//printk("%s(%d) MSG_T(msg->id):%d MSG_I(msg->id):%d cmd:%s\r\n", __func__, 
+	//printk("%s(%d) MSG_T(msg->id):%d MSG_I(msg->id):%d cmd:%s\r\n", __func__,
 	//	msg->id,
-	//	MSG_T(msg->id), 
+	//	MSG_T(msg->id),
 	//	MSG_I(msg->id),
 	//	rwnx_id2str[MSG_T(msg->id)][MSG_I(msg->id)]);
-	
-    rwnx_hw->cmd_mgr->msgind(rwnx_hw->cmd_mgr, msg,
-                            msg_hdlrs[MSG_T(le16_to_cpu(msg->id))][MSG_I(le16_to_cpu(msg->id))]);
+
+    u16 id = le16_to_cpu(msg->id);
+    u16 task = MSG_T(id);
+    msg_cb_fct cb = NULL;
+
+    if (task < ARRAY_SIZE(msg_hdlrs) && msg_hdlrs[task])
+        cb = msg_hdlrs[task][MSG_I(id)];
+
+    rwnx_hw->cmd_mgr->msgind(rwnx_hw->cmd_mgr, msg, cb);
 }
 
 void rwnx_rx_handle_print(struct rwnx_hw *rwnx_hw, u8 *msg, u32 len)

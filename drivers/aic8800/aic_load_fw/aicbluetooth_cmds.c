@@ -112,6 +112,9 @@ static int cmd_mgr_queue(struct rwnx_cmd_mgr *cmd_mgr, struct rwnx_cmd *cmd)
                 cmd_complete(cmd_mgr, cmd);
             }
             spin_unlock_bh(&cmd_mgr->lock);
+            /* cmd_complete() only frees cmd for NONBLOCK cmds, which this
+             * driver never uses; nothing else will free cmd after a timeout. */
+            kfree(cmd);
         }
         else{
             kfree(cmd);
@@ -158,6 +161,14 @@ static int cmd_mgr_msgind(struct rwnx_cmd_mgr *cmd_mgr, struct rwnx_cmd_e2amsg *
                          "Unexpect E2A msg len %d > %d\n", msg->param_len,
                          RWNX_CMD_E2AMSG_LEN_MAX)) {
                     msg->param_len = RWNX_CMD_E2AMSG_LEN_MAX;
+                }
+
+                /* cmd->e2a_msg is only ever a caller-owned struct dbg_mem_read_cfm
+                 * in this file (every other request here passes cfm == NULL);
+                 * clamp to its real size instead of the generic max above. */
+                if (cmd->reqid == DBG_MEM_READ_CFM &&
+                    msg->param_len > sizeof(struct dbg_mem_read_cfm)) {
+                    msg->param_len = sizeof(struct dbg_mem_read_cfm);
                 }
 
                 if (cmd->e2a_msg && msg->param_len)

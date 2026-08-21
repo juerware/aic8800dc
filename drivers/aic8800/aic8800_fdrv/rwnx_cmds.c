@@ -74,6 +74,7 @@ int cmd_mgr_queue_force_defer(struct rwnx_cmd_mgr *cmd_mgr, struct rwnx_cmd *cmd
         printk(KERN_CRIT"cmd queue crashed\n");
         cmd->result = -EPIPE;
         spin_unlock_bh(&cmd_mgr->lock);
+        kfree(cmd->a2e_msg);
         return -EPIPE;
     }
 
@@ -84,6 +85,7 @@ int cmd_mgr_queue_force_defer(struct rwnx_cmd_mgr *cmd_mgr, struct rwnx_cmd *cmd
                    cmd_mgr->max_queue_sz);
             cmd->result = -ENOMEM;
             spin_unlock_bh(&cmd_mgr->lock);
+            kfree(cmd->a2e_msg);
             return -ENOMEM;
         }
     }
@@ -134,6 +136,7 @@ static int cmd_mgr_queue(struct rwnx_cmd_mgr *cmd_mgr, struct rwnx_cmd *cmd)
         printk(KERN_CRIT"cmd queue crashed\n");
         cmd->result = -EPIPE;
         spin_unlock_bh(&cmd_mgr->lock);
+        kfree(cmd->a2e_msg);
         return -EPIPE;
     }
 
@@ -146,6 +149,7 @@ static int cmd_mgr_queue(struct rwnx_cmd_mgr *cmd_mgr, struct rwnx_cmd *cmd)
                    cmd_mgr->max_queue_sz);
             cmd->result = -ENOMEM;
             spin_unlock_bh(&cmd_mgr->lock);
+            kfree(cmd->a2e_msg);
             return -ENOMEM;
         }
         last = list_entry(cmd_mgr->cmds.prev, struct rwnx_cmd, list);
@@ -350,6 +354,9 @@ static void cmd_mgr_task_process(struct work_struct *work)
                     cmd_complete(cmd_mgr, next);
                 }
                 spin_unlock_bh(&cmd_mgr->lock);
+                /* next was queued for deferred push, so its original sender
+                 * already returned; nothing else will free its cmd_array slot. */
+                rwnx_cmd_free(next);
             } else
 		rwnx_cmd_free(next);//kfree(next);AIDEN
         }

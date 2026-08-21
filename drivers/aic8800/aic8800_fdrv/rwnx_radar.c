@@ -1595,9 +1595,9 @@ int rwnx_radar_dump_pattern_detector(char *buf, size_t len,
                 size_needed += rwnx_radar_dump_pri_detector(NULL, 0, pde);
             }
             size_needed += sizeof(info);
+        }
 
         return size_needed;
-        }
     }
 
     /* */

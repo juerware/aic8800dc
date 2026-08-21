@@ -277,8 +277,10 @@ static int aicwf_vendor_subcmd_get_channel_list(struct wiphy *wiphy, struct wire
 		case GSCAN_ATTRIBUTE_BAND:
 			reply = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, payload);
 
-			if (!reply)
+			if (!reply) {
+				kfree(channel_list);
 				return -ENOMEM;
+			}
 
 			if (nla_put_u32(reply, GSCAN_ATTRIBUTE_NUM_CHANNELS, num_channels))
 				goto out_put_fail;
@@ -292,6 +294,7 @@ static int aicwf_vendor_subcmd_get_channel_list(struct wiphy *wiphy, struct wire
 			break;
 		default:
 			pr_err("%s(%d), Unknown type: %d\n", __func__, __LINE__, type);
+			kfree(channel_list);
 			return -EINVAL;
 		}
 	}

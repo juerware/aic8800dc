@@ -435,6 +435,11 @@ static int rwnx_send_msg(struct rwnx_hw *rwnx_hw, const void *msg_params,
     //nonblock = is_non_blocking_msg(msg->id);
     nonblock = 0;//AIDEN
     cmd = rwnx_cmd_malloc();//kzalloc(sizeof(struct rwnx_cmd), nonblock ? GFP_ATOMIC : GFP_KERNEL);
+    if (!cmd) {
+        rwnx_msg_free(rwnx_hw, msg_params);
+        AICWFDBG(LOGERROR, "%s cmd pool exhausted\n", __func__);
+        return -ENOMEM;
+    }
     cmd->result  = -EINTR;
     cmd->id      = msg->id;
     cmd->reqid   = reqid;
@@ -512,6 +517,11 @@ static int rwnx_send_msg1(struct rwnx_hw *rwnx_hw, const void *msg_params,
     //nonblock = is_non_blocking_msg(msg->id);
 	nonblock = 0;
     cmd = rwnx_cmd_malloc();//kzalloc(sizeof(struct rwnx_cmd), nonblock ? GFP_ATOMIC : GFP_KERNEL);
+    if (!cmd) {
+        rwnx_msg_free(rwnx_hw, msg_params);
+        AICWFDBG(LOGERROR, "%s cmd pool exhausted\n", __func__);
+        return -ENOMEM;
+    }
     cmd->result  = -EINTR;
     cmd->id      = msg->id;
     cmd->reqid   = reqid;

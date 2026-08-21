@@ -105,6 +105,10 @@ sudo make uninstall
 ## Notes
 
 - The `Makefile` defaults to `CONFIG_PLATFORM_UBUNTU=y` and picks up `/lib/modules/$(uname -r)/build`, so no extra flags are needed.
-- Tested clean build (0 errors, 0 warnings) against kernel **7.0.0-15-generic** with **gcc 15.2.0**; also rebuilt clean against **7.0.0-22-generic**.
+- Tested clean build (0 errors, 0 warnings) against kernel **7.0.0-15-generic** with **gcc 15.2.0**; also rebuilt clean against **7.0.0-22-generic** and **7.0.0-30-generic**.
 - The default build is **DC/DW-only** and excludes RF test commands (`CONFIG_AIC8800D80=n`, `CONFIG_RFTEST=n`). The `.ko` is ~675 KB smaller as a result. See *Build Options* if you need the D80/D81 or RF-test paths.
 - Build artifacts are now covered by a root `.gitignore`, so `git status` stays clean after a build.
+- `aic8800_fdrv/Makefile`'s `make clean` used to print `test: -lt: unexpected operator` — the old-kernel version check ran `$(VERSION)` even when this Makefile is invoked standalone (outside a real `M=...` kbuild pass, where `VERSION` is never set). Guarded it with `test -n "$(VERSION)"`; `make clean` is now silent.
+- **2026-08-21 bug-fixing pass**: found and fixed 19 real runtime bugs (use-after-free in USB TX teardown, RX double-free, illegal sleep in URB-completion context, several NULL derefs and leaks, Bluetooth patch-table parsing OOB reads) via a subagent audit + adversarial verification, then hand-fixed each one and confirmed a clean rebuild. One bug (a firmware-length-into-fixed-buffer stack overflow in `rwnx_cmds.c`) was left unfixed — full details and the reasoning for leaving it alone are in `README.md`'s Notes section. **Not yet installed or load-tested** — the new `.ko` files are built but the currently loaded module is still the old one.
+- Same pass, follow-up: `sparse` doesn't work on this system at all (Ubuntu's packaged 0.6.4 predates a C construct this kernel's headers use — would need building sparse from source to fix). `cppcheck` ran clean — 3 false positives (verified by hand) and one harmless dead-code line removed.
+- Added `dkms.conf` at the repo root so kernel upgrades can rebuild/reinstall automatically instead of the manual dance above — see `README.md`'s new *Optional: DKMS* section for setup and the caveat about it building from a copied source tree, not your live checkout.

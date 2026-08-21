@@ -772,6 +772,7 @@ rwnx_tdls_send_mgmt_packet_data(struct rwnx_hw *rwnx_hw, struct rwnx_vif *rwnx_v
         ret = rwnx_start_mgmt_xmit(rwnx_vif, NULL, NULL, false, 0, skb->data, skb->len, false, false, &cookie);
         #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0) */
 
+        dev_kfree_skb(skb);
         return ret;
     }
 

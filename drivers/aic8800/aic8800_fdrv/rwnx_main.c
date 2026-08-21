@@ -9405,6 +9405,7 @@ if((g_rwnx_plat->usbdev->chipid == PRODUCT_ID_AIC8801) ||
 	rwnx_hw->apmStaloss_wq = create_singlethread_workqueue("apmStaloss_wq");
 	if (!rwnx_hw->apmStaloss_wq) {
 		txrx_err("insufficient memory to create apmStaloss workqueue.\n");
+		kmem_cache_destroy(rwnx_hw->sw_txhdr_cache);
 		goto err_cache;
 	}
 

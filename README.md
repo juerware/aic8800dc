@@ -9,7 +9,7 @@ This fork is **specifically maintained for**:
 | Item | Value |
 |---|---|
 | Distribution | **Ubuntu 26.04 LTS** |
-| Kernel | **7.0.X** (tested on `7.0.0-15-generic`) |
+| Kernel | **7.0.X** (tested on `7.0.0-15-generic`, `7.0.0-22-generic`, `7.0.0-30-generic`) |
 | Architecture | **x86_64** |
 | Toolchain | gcc 15.2.0 |
 
@@ -140,6 +140,21 @@ sudo modprobe -r aic8800_fdrv aic_load_fw
 sudo make uninstall
 ```
 
+## Optional: DKMS (rebuild automatically on kernel upgrades)
+
+By default this driver has to be manually rebuilt and reinstalled after every kernel upgrade (see *Build options* above). A `dkms.conf` is provided so DKMS can do that automatically instead, using the kernel package manager's own `postinst` hook:
+
+```bash
+sudo apt install dkms
+sudo dkms add .
+sudo dkms build aic8800dc/6.4.3.0
+sudo dkms install aic8800dc/6.4.3.0
+```
+
+From then on, every new kernel package installed via `apt` triggers an automatic rebuild + reinstall for that kernel — no more manual `make clean && make && sudo make install` after upgrades.
+
+**Caveat**: `dkms add` copies this source tree into `/usr/src/aic8800dc-6.4.3.0/`; DKMS builds from that copy, not from your working checkout. If you're actively editing the driver, keep using the manual `make`/`sudo make install` workflow above and treat DKMS as something to set up once you're done iterating — otherwise you'd need to re-run `dkms add`/`dkms build` after every source change. To remove it: `sudo dkms remove aic8800dc/6.4.3.0 --all`.
+
 ## Notes
 
 - This fork has been hardened against kernel-API churn from **6.1 through 7.0** (see `git log` for the per-version compat patches), and audited for portability and safety:
@@ -154,3 +169,15 @@ sudo make uninstall
   - **Build trimming** — RF test commands and the 8800D80 compat layer are off by default; see *Build options* above.
   - A root `.gitignore` now keeps kernel build artifacts (`*.o`, `*.ko`, `*.cmd`, `Module.symvers`, …) out of `git status`.
 - The top-level `Makefile` defaults to `CONFIG_PLATFORM_UBUNTU=y`. The Rockchip / Allwinner / Amlogic blocks contain dead vendor paths and are gated off by default.
+- **Runtime-bug audit pass** (2026-08-21): the build was already 0 warnings under `-Wall -Wextra` plus the kernel's `-Werror=` hardening flags, so a targeted read-through of the USB transport, command-manager, and Bluetooth firmware-loader code turned up 20 real runtime bugs the compiler can't see; 19 are fixed, one is a documented known issue:
+  - **USB TX teardown use-after-free** — on disconnect, the TX bus thread could still be mid-submit when URBs were cancelled and `aic_usb_dev` freed. Added a `tx_submitted` USB anchor (mirroring the existing RX anchor) and reordered `aicwf_bus_deinit()` to fully stop the TX thread/tasklet *before* cancelling URBs.
+  - **RX double-free / OOB read** — an oversized aggregated USB sub-packet was freed inline and then `continue`d back into a loop condition that read the freed `skb`, and later fell through to a second, unconditional free of the same `skb`; also added a bounds check so a corrupted/oversized sub-packet length can no longer `memcpy` past the end of the receive buffer.
+  - **Illegal sleep in atomic context** — `aicwf_usb_rx_complete()` (a URB completion callback) called the blocking `down()` on a disconnect-rendezvous semaphore; switched to `down_trylock()` in both the active and `CONFIG_PREALLOC_RX_SKB` code paths.
+  - **NULL-pointer derefs** — `rwnx_send_msg()`/`rwnx_send_msg1()` now check for command-pool exhaustion instead of dereferencing a `NULL` `cmd`; `rwnx_rx_handle_msg()` now bounds/NULL-checks the task-handler table lookup instead of indexing it unconditionally (mirroring the existing guard in `RWNX_ID2STR()`).
+  - **Leaks** — a timed-out deferred command no longer permanently loses its slot in the 20-entry command pool (both the main driver's `rwnx_cmds.c` and the Bluetooth loader's own copy); a workqueue-creation failure in `rwnx_cfg80211_init()` no longer leaks the `sw_txhdr` slab cache; early-return paths in `cmd_mgr_queue()`/`cmd_mgr_queue_force_defer()` now free the pending firmware message; a TDLS discovery-response and a vendor `GET_CHANNEL_LIST` error path no longer leak an `skb` / heap buffer; the Bluetooth patch-table loader now frees its linked list on a mid-download write failure; a dead (`CONFIG_USB_TX_AGGR=n`) TX-aggregation buffer now has a matching teardown call.
+  - **Bluetooth firmware parsing** — `vmalloc()` results are now NULL-checked *before* `memset()` (was a guaranteed crash on allocation failure); the patch-table parser now validates each entry against the remaining buffer length before reading it, instead of trusting a firmware-supplied length unconditionally.
+  - **Debugfs** — `rwnx_radar_dump_pattern_detector()`'s size-probe pass now sums over *all* radar types instead of returning after the first one, so the real dump can no longer be silently truncated.
+  - **Known issue, not fixed**: `rwnx_cmds.c`'s `cmd_mgr_msgind()` copies a firmware-reported confirmation length into a caller-supplied buffer, bounded only by a generic 1024-byte cap rather than each message type's real (often much smaller) buffer size — a stack-overflow risk if the firmware ever reports a corrupt/oversized length. The equivalent bug in the Bluetooth loader's private command manager (`aic_load_fw/aicbluetooth_cmds.c`) *was* fixed, because that copy only ever has one destination type in its whole call graph. The main driver's version would require threading the real destination size through `rwnx_send_msg()`/`rwnx_send_msg1()`, which have 100+ call sites across nearly every driver feature (scan, connect, AP, P2P, TDLS, rate control, …) — too invasive to change blind without hardware coverage of every one of those paths.
+  - All fixes verified with a full clean rebuild (0 warnings, 0 errors); not yet installed/load-tested on hardware.
+- **Follow-up static analysis** (same pass): `sparse` can't run at all against this kernel version — Ubuntu's packaged 0.6.4 doesn't understand `__typeof_unqual__`, which this kernel's headers use, so kbuild's own `checker-valid.sh` refuses to invoke it (would need building sparse from source to use it here). `cppcheck` ran clean: of 4 non-`KERNEL_VERSION`-noise findings, 3 were false positives (two are cppcheck not tracing initialization through `list_for_each_entry_safe` over a pre-allocated pool, one is cppcheck not tracing a postcondition through a cross-function pointer-output parameter — verified by hand in both cases) and one was a genuinely pointless `head = NULL;` local reassignment in `aicbt_patch_table_free()`, removed.
+- `dkms.conf` added at the repo root — see *Optional: DKMS* above.

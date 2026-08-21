@@ -231,9 +231,14 @@ static int aic_load_firmware(u32 ** fw_buf, const char *name, struct device *dev
 
 
 	buffer = vmalloc(size);
+	if (!buffer) {
+		printk("%s: vmalloc %d failed\n", __func__, size);
+		release_firmware(fw);
+		return -1;
+	}
 	memset(buffer, 0, size);
 	memcpy(buffer, dst, size);
-	
+
 	*fw_buf = buffer;
 
 	MD5Init(&md5);
@@ -318,7 +323,6 @@ static int aic_load_firmware(u32 ** fw_buf, const char *name, struct device *dev
 
     /* start to read from firmware file */
     buffer = vmalloc(size);
-    memset(buffer, 0, size);
     if(!buffer){
             *fw_buf=NULL;
             __putname(path);
@@ -326,6 +330,7 @@ static int aic_load_firmware(u32 ** fw_buf, const char *name, struct device *dev
             fp=NULL;
             return -1;
     }
+    memset(buffer, 0, size);
 
 
     #if LINUX_VERSION_CODE > KERNEL_VERSION(4, 13, 16)
@@ -1064,7 +1069,6 @@ int aicbt_patch_table_free(struct aicbt_patch_table *head)
 		vfree(p);
 		p = n;
 	}
-	head = NULL;
 	return 0;
 }
 
@@ -1093,7 +1097,7 @@ struct aicbt_patch_table *aicbt_patch_table_alloc(struct aic_usb_dev *usbdev,con
 
 	p = rawdata;
 
-	if (memcmp(p, AICBT_PT_TAG, sizeof(AICBT_PT_TAG) < 16 ? sizeof(AICBT_PT_TAG) : 16)) {
+	if (size < 16 || memcmp(p, AICBT_PT_TAG, sizeof(AICBT_PT_TAG) < 16 ? sizeof(AICBT_PT_TAG) : 16)) {
 		printk("TAG err\n");
 		ret = -1;
 		goto err;
@@ -1101,6 +1105,11 @@ struct aicbt_patch_table *aicbt_patch_table_alloc(struct aic_usb_dev *usbdev,con
 	p += 16;
 
 	while (p - rawdata < size) {
+		if (size - (int)(p - rawdata) < 24) {
+			printk("patch table entry header truncated\n");
+			ret = -1;
+			goto err;
+		}
 		//printk("size = %d  p - rawdata = %d \r\n", size, p - rawdata);
 		new = (struct aicbt_patch_table *)vmalloc(sizeof(struct aicbt_patch_table));
 		memset(new, 0, sizeof(struct aicbt_patch_table));
@@ -1125,6 +1134,10 @@ struct aicbt_patch_table *aicbt_patch_table_alloc(struct aic_usb_dev *usbdev,con
 
 		if((cur->type )  >= 1000 || cur->len == 0) {//Temp Workaround
 			cur->len = 0;
+		}else if (size - (int)(p - rawdata) < (int)cur->len * 8) {
+			printk("patch table entry data truncated\n");
+			ret = -1;
+			goto err;
 		}else{
 			cur->data = (uint32_t *)vmalloc(sizeof(uint8_t) * cur->len * 8);
 			memset(cur->data, 0, sizeof(uint8_t) * cur->len * 8);
@@ -1214,8 +1227,10 @@ int aicbt_patch_table_load(struct aic_usb_dev *usbdev, struct aicbt_patch_table 
 		}
 		for (i = 0; i < p->len; i++) {
 			ret = rwnx_send_dbg_mem_write_req(usbdev, *data, *(data + 1));
-			if (ret != 0)
+			if (ret != 0) {
+				aicbt_patch_table_free(head);
 				return ret;
+			}
 			data += 2;
 		}
 		if (p->type == AICBT_PT_PWRON)
@@ -1260,7 +1275,7 @@ int rwnx_plat_bin_fw_patch_table_upload_android(struct aic_usb_dev *usbdev, char
 
 	p = rawdata;
 
-	if (memcmp(p, AICBT_PT_TAG, sizeof(AICBT_PT_TAG) < 16 ? sizeof(AICBT_PT_TAG) : 16)) {
+	if (size < 16 || memcmp(p, AICBT_PT_TAG, sizeof(AICBT_PT_TAG) < 16 ? sizeof(AICBT_PT_TAG) : 16)) {
 		printk("TAG err\n");
 		ret = -1;
 		goto err;
@@ -1268,6 +1283,11 @@ int rwnx_plat_bin_fw_patch_table_upload_android(struct aic_usb_dev *usbdev, char
 	p += 16;
 
 	while (p - rawdata < size) {
+		if (size - (int)(p - rawdata) < 24) {
+			printk("patch table entry header truncated\n");
+			ret = -1;
+			goto err;
+		}
 		//printk("size = %d  p - rawdata = %d \r\n", size, p - rawdata);
 		new = (struct aicbt_patch_table *)vmalloc(sizeof(struct aicbt_patch_table));
 		memset(new, 0, sizeof(struct aicbt_patch_table));
@@ -1292,6 +1312,10 @@ int rwnx_plat_bin_fw_patch_table_upload_android(struct aic_usb_dev *usbdev, char
 
 		if((cur->type )  >= 1000 || cur->len == 0) {//Temp Workaround
 			cur->len = 0;
+		}else if (size - (int)(p - rawdata) < (int)cur->len * 8) {
+			printk("patch table entry data truncated\n");
+			ret = -1;
+			goto err;
 		}else{
 			cur->data = (uint32_t *)vmalloc(sizeof(uint8_t) * cur->len * 8);
 			memset(cur->data, 0, sizeof(uint8_t) * cur->len * 8);
